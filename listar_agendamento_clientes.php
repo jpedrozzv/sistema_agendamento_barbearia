@@ -57,6 +57,7 @@ $result = $conn->query($sql);
     <a class="navbar-brand" href="cliente_dashboard.php">💈 Barbearia</a>
     <span class="navbar-text text-white">Bem-vindo, <?= $_SESSION['cliente_nome'] ?></span>
     <a href="logout.php" class="btn btn-outline-light">Sair</a>
+
   </div>
 </nav>
 
@@ -100,8 +101,8 @@ $result = $conn->query($sql);
             <td>
               <?php if ($row['status'] != "cancelado" && $row['status'] != "concluido"): ?>
                 <a href="?cancelar=<?= $row['id_agendamento'] ?>" class="btn btn-sm btn-danger"
-                   onclick="return confirm('Deseja realmente cancelar este agendamento?')">
-                   <i class="bi bi-x-circle"></i> Cancelar
+                    onclick="return confirm('Deseja realmente cancelar este agendamento?')">
+                    <i class="bi bi-x-circle"></i> Cancelar
                 </a>
               <?php else: ?>
                 <span class="text-muted">-</span>

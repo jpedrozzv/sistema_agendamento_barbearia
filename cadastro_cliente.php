@@ -6,7 +6,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $nome  = $_POST['nome'];
     $telefone = $_POST['telefone'];
     $email = $_POST['email'];
-    $senha = $_POST['senha']; // 👉 em produção deveria ser hash
+    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+
 
     // Verifica se o e-mail já existe
     $check = $conn->query("SELECT * FROM Cliente WHERE email='$email'");

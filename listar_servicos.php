@@ -11,8 +11,13 @@ if (!isset($_SESSION['admin_id']) || $_SESSION['tipo'] != "admin") {
 // Remover serviço
 if (isset($_GET['remover'])) {
     $id = intval($_GET['remover']);
-    $conn->query("DELETE FROM Servico WHERE id_servico = $id");
-    $msg = "✅ Serviço removido com sucesso!";
+    if ($conn->query("DELETE FROM Servico WHERE id_servico = $id")) {
+        header("Location: listar_servicos.php?msg=remove_ok");
+        exit;
+    } else {
+        header("Location: listar_servicos.php?msg=remove_erro");
+        exit;
+    }
 }
 
 // Editar serviço
@@ -22,11 +27,14 @@ if (isset($_POST['editar'])) {
     $preco = $_POST['preco'];
     $duracao = $_POST['duracao'];
 
-    $sql = "UPDATE Servico 
-            SET descricao='$descricao', preco='$preco', duracao='$duracao' 
-            WHERE id_servico=$id";
-    $conn->query($sql);
-    $msg = "✅ Serviço atualizado com sucesso!";
+    $sql = "UPDATE Servico SET descricao='$descricao', preco='$preco', duracao='$duracao' WHERE id_servico=$id";
+    if ($conn->query($sql)) {
+        header("Location: listar_servicos.php?msg=edit_ok");
+        exit;
+    } else {
+        header("Location: listar_servicos.php?msg=edit_erro");
+        exit;
+    }
 }
 
 // Adicionar novo serviço
@@ -35,10 +43,14 @@ if (isset($_POST['adicionar'])) {
     $preco = $_POST['preco'];
     $duracao = $_POST['duracao'];
 
-    $sql = "INSERT INTO Servico (descricao, preco, duracao) 
-            VALUES ('$descricao', '$preco', '$duracao')";
-    $conn->query($sql);
-    $msg = "✅ Novo serviço adicionado com sucesso!";
+    $sql = "INSERT INTO Servico (descricao, preco, duracao) VALUES ('$descricao', '$preco', '$duracao')";
+    if ($conn->query($sql)) {
+        header("Location: listar_servicos.php?msg=add_ok");
+        exit;
+    } else {
+        header("Location: listar_servicos.php?msg=add_erro");
+        exit;
+    }
 }
 
 // Buscar serviços
@@ -65,7 +77,27 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico");
 <div class="container mt-4">
   <h2>✂️ Gerenciar Serviços</h2>
 
-  <?php if (isset($msg)) echo "<div class='alert alert-info'>$msg</div>"; ?>
+  <!-- Mensagens -->
+  <?php
+  if (isset($_GET['msg'])) {
+      switch ($_GET['msg']) {
+          case 'add_ok':
+              echo '<div class="alert alert-success alert-dismissible fade show mt-3">✅ Serviço adicionado com sucesso!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+              break;
+          case 'edit_ok':
+              echo '<div class="alert alert-success alert-dismissible fade show mt-3">✅ Serviço atualizado com sucesso!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+              break;
+          case 'remove_ok':
+              echo '<div class="alert alert-success alert-dismissible fade show mt-3">🗑️ Serviço removido com sucesso!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+              break;
+          case 'add_erro':
+          case 'edit_erro':
+          case 'remove_erro':
+              echo '<div class="alert alert-danger alert-dismissible fade show mt-3">❌ Ocorreu um erro. Tente novamente.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+              break;
+      }
+  }
+  ?>
 
   <!-- Formulário de novo serviço -->
   <div class="card shadow-sm p-3 mb-4">
@@ -86,7 +118,7 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico");
     </form>
   </div>
 
-  <!-- Tabela de serviços -->
+  <!-- Tabela -->
   <?php if ($result->num_rows > 0): ?>
     <table class="table table-bordered table-hover shadow-sm">
       <thead class="table-dark">
@@ -106,51 +138,43 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico");
             <td>R$ <?= number_format($row['preco'], 2, ',', '.') ?></td>
             <td><?= $row['duracao'] ?> min</td>
             <td class="text-center">
-              <!-- Botão editar -->
-              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_servico'] ?>">
-                <i class="bi bi-pencil"></i>
-              </button>
-
-              <!-- Modal editar -->
-              <div class="modal fade" id="editarModal<?= $row['id_servico'] ?>" tabindex="-1">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <form method="POST">
-                      <div class="modal-header">
-                        <h5 class="modal-title">Editar Serviço</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                      </div>
-                      <div class="modal-body">
-                        <input type="hidden" name="id_servico" value="<?= $row['id_servico'] ?>">
-                        <div class="mb-3">
-                          <label class="form-label">Descrição</label>
-                          <input type="text" name="descricao" class="form-control" value="<?= $row['descricao'] ?>" required>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Preço</label>
-                          <input type="number" step="0.01" name="preco" class="form-control" value="<?= $row['preco'] ?>" required>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Duração (min)</label>
-                          <input type="number" name="duracao" class="form-control" value="<?= $row['duracao'] ?>" required>
-                        </div>
-                      </div>
-                      <div class="modal-footer">
-                        <button type="submit" name="editar" value="1" class="btn btn-success">Salvar</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Botão remover -->
-              <a href="?remover=<?= $row['id_servico'] ?>" class="btn btn-sm btn-danger"
-                 onclick="return confirm('Deseja remover este serviço?')">
-                 <i class="bi bi-trash"></i>
-              </a>
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_servico'] ?>"><i class="bi bi-pencil"></i></button>
+              <a href="?remover=<?= $row['id_servico'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Deseja remover este serviço?')"><i class="bi bi-trash"></i></a>
             </td>
           </tr>
+
+          <!-- Modal Editar -->
+          <div class="modal fade" id="editarModal<?= $row['id_servico'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header">
+                    <h5 class="modal-title">Editar Serviço</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="id_servico" value="<?= $row['id_servico'] ?>">
+                    <div class="mb-3">
+                      <label class="form-label">Descrição</label>
+                      <input type="text" name="descricao" class="form-control" value="<?= $row['descricao'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Preço</label>
+                      <input type="number" step="0.01" name="preco" class="form-control" value="<?= $row['preco'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Duração (min)</label>
+                      <input type="number" name="duracao" class="form-control" value="<?= $row['duracao'] ?>" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="editar" value="1" class="btn btn-success">Salvar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
         <?php endwhile; ?>
       </tbody>
     </table>

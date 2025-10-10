@@ -41,6 +41,7 @@ $result = $conn->query($sql);
     <a class="navbar-brand" href="cliente_dashboard.php">💈 Barbearia</a>
     <span class="navbar-text text-white">Bem-vindo, <?= $_SESSION['cliente_nome'] ?></span>
     <a href="logout.php" class="btn btn-outline-light">Sair</a>
+
   </div>
 </nav>
 

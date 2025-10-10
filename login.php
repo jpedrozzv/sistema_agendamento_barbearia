@@ -7,32 +7,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $senha = $_POST['senha'];
 
     // Verifica se é admin
-    $sql_admin = "SELECT * FROM Admin WHERE email = '$email' AND senha = '$senha'";
-    $res_admin = $conn->query($sql_admin);
+    $sql_admin = "SELECT * FROM Admin WHERE email = ?";
+    $stmt = $conn->prepare($sql_admin);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $res_admin = $stmt->get_result();
 
     if ($res_admin->num_rows > 0) {
         $admin = $res_admin->fetch_assoc();
-        $_SESSION['admin_id'] = $admin['id_admin'];
-        $_SESSION['admin_nome'] = $admin['nome'];
-        $_SESSION['tipo'] = "admin";
-        header("Location: admin_dashboard.php");
-        exit;
+        if (password_verify($senha, $admin['senha'])) {
+            $_SESSION['admin_id'] = $admin['id_admin'];
+            $_SESSION['admin_nome'] = $admin['nome'];
+            $_SESSION['tipo'] = "admin";
+            header("Location: admin_dashboard.php");
+            exit;
+        }
     }
 
     // Verifica se é cliente
-    $sql_cliente = "SELECT * FROM Cliente WHERE email = '$email' AND senha = '$senha'";
-    $res_cliente = $conn->query($sql_cliente);
+    $sql_cliente = "SELECT * FROM Cliente WHERE email = ?";
+    $stmt = $conn->prepare($sql_cliente);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $res_cliente = $stmt->get_result();
 
     if ($res_cliente->num_rows > 0) {
         $cliente = $res_cliente->fetch_assoc();
-        $_SESSION['cliente_id'] = $cliente['id_cliente'];
-        $_SESSION['cliente_nome'] = $cliente['nome'];
-        $_SESSION['tipo'] = "cliente";
-        header("Location: cliente_dashboard.php");
-        exit;
+        if (password_verify($senha, $cliente['senha'])) {
+            $_SESSION['cliente_id'] = $cliente['id_cliente'];
+            $_SESSION['cliente_nome'] = $cliente['nome'];
+            $_SESSION['tipo'] = "cliente";
+            header("Location: cliente_dashboard.php");
+            exit;
+        }
     }
 
-    // Se não encontrou em nenhum
+    // Se não encontrou ou senha errada
     $erro = "❌ E-mail ou senha inválidos.";
 }
 ?>
