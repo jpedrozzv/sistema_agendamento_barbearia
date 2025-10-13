@@ -1,172 +1,139 @@
 <?php
-include("conexao.php");
 session_start();
+include("conexao.php");
+include("verifica_adm.php");
 
-// Somente admin pode acessar
-if (!isset($_SESSION['admin_id']) || $_SESSION['tipo'] != "admin") {
-    header("Location: login.php");
-    exit;
-}
 
-// --- Remover cliente ---
+
+// --- REMOVER CLIENTE ---
 if (isset($_GET['remover'])) {
     $id = intval($_GET['remover']);
-
-    // Apagar agendamentos vinculados
     $conn->query("DELETE FROM Agendamento WHERE id_cliente = $id");
-
-    // Depois apagar o cliente
-    if ($conn->query("DELETE FROM Cliente WHERE id_cliente = $id") === TRUE) {
-        header("Location: listar_clientes.php?msg=remove_ok");
+    if ($conn->query("DELETE FROM Cliente WHERE id_cliente = $id")) {
+        header("Location: listar_clientes.php?msg=ok_remove");
         exit;
     } else {
-        header("Location: listar_clientes.php?msg=remove_erro");
+        header("Location: listar_clientes.php?msg=erro_remove");
         exit;
     }
 }
 
-// --- Editar cliente ---
+// --- EDITAR CLIENTE ---
 if (isset($_POST['editar'])) {
     $id = intval($_POST['id_cliente']);
-    $nome = $_POST['nome'];
-    $telefone = $_POST['telefone'];
-    $email = $_POST['email'];
+    $nome = trim($_POST['nome']);
+    $telefone = trim($_POST['telefone']);
+    $email = trim($_POST['email']);
 
     $sql = "UPDATE Cliente 
             SET nome='$nome', telefone='$telefone', email='$email' 
             WHERE id_cliente=$id";
-
-    if ($conn->query($sql) === TRUE) {
-        header("Location: listar_clientes.php?msg=edit_ok");
+    if ($conn->query($sql)) {
+        header("Location: listar_clientes.php?msg=ok_edit");
         exit;
     } else {
-        header("Location: listar_clientes.php?msg=edit_erro");
+        header("Location: listar_clientes.php?msg=erro_edit");
         exit;
     }
 }
 
-// Buscar clientes
-$result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente");
+$result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
 ?>
 
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Lista de Clientes</title>
+  <title>Gerenciar Clientes - Barber La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-
 <body class="bg-light">
 
-<div class="container mt-4">
-  <h2>Lista de Clientes</h2>
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="admin_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
 
-  <!-- Mensagens Bootstrap -->
-  <?php
-  if (isset($_GET['msg'])) {
-      switch ($_GET['msg']) {
-          case 'senha_ok':
-              echo '<div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                      ✅ Senha redefinida com sucesso! Nova senha: <strong>1234</strong>
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-          case 'senha_erro':
-              echo '<div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                      ❌ Erro ao redefinir senha. Tente novamente.
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-          case 'edit_ok':
-              echo '<div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                      ✅ Cliente atualizado com sucesso!
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-          case 'edit_erro':
-              echo '<div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                      ❌ Erro ao atualizar cliente. Tente novamente.
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-          case 'remove_ok':
-              echo '<div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
-                      🗑️ Cliente removido com sucesso!
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-          case 'remove_erro':
-              echo '<div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                      ❌ Erro ao remover cliente. Verifique se há agendamentos vinculados.
-                      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>';
-              break;
-      }
-  }
-  ?>
+<div class="container mt-4">
+  <h2 class="text-center mb-4">👥 Gerenciar Clientes</h2>
+
+  <!-- ALERTAS UNIFICADOS -->
+  <?php if (isset($_GET['msg'])): ?>
+    <div class="alert alert-dismissible fade show mt-3 
+      <?= str_contains($_GET['msg'], 'erro') ? 'alert-danger' : 'alert-success' ?>" role="alert">
+      <?php
+        switch ($_GET['msg']) {
+          case 'ok_edit':   echo "✏️ Alterações salvas com sucesso!"; break;
+          case 'ok_remove': echo "🗑️ Cliente removido com sucesso!"; break;
+          case 'erro_edit': echo "❌ Erro ao atualizar cliente."; break;
+          case 'erro_remove': echo "❌ Erro ao remover cliente."; break;
+          case 'senha_ok':  echo "🔑 Senha redefinida com sucesso! Nova senha: <strong>1234</strong>"; break;
+          case 'senha_erro':echo "❌ Erro ao redefinir senha."; break;
+        }
+      ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
 
   <?php if ($result->num_rows > 0): ?>
-    <table class="table table-bordered table-hover shadow-sm mt-3">
-      <thead class="table-dark">
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
         <tr>
           <th>ID</th>
           <th>Nome</th>
           <th>Telefone</th>
           <th>Email</th>
-          <th style="width:150px;">Ações</th>
+          <th>Ações</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="text-center">
         <?php while ($row = $result->fetch_assoc()): ?>
           <tr>
             <td><?= $row['id_cliente'] ?></td>
-            <td><?= $row['nome'] ?></td>
+            <td><?= htmlspecialchars($row['nome']) ?></td>
             <td><?= $row['telefone'] ?></td>
             <td><?= $row['email'] ?></td>
-            <td class="text-center">
-
+            <td>
               <!-- Botão Editar -->
-              <button class="btn btn-sm btn-warning" 
-                      data-bs-toggle="modal" 
-                      data-bs-target="#editarModal<?= $row['id_cliente'] ?>"
-                      title="Editar Cliente">
+              <button class="btn btn-sm btn-warning"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editarModal<?= $row['id_cliente'] ?>">
                 <i class="bi bi-pencil"></i>
               </button>
 
               <!-- Botão Redefinir Senha -->
-              <a href="redefinir_senha.php?id=<?= $row['id_cliente'] ?>" 
+              <a href="redefinir_senha.php?id=<?= $row['id_cliente'] ?>"
                  class="btn btn-sm btn-secondary"
-                 title="Redefinir senha para 1234"
-                 onclick="return confirm('Deseja redefinir a senha deste cliente? A nova senha será 1234.')">
-                 <i class="bi bi-key"></i>
+                 onclick="return confirm('Redefinir a senha deste cliente para 1234?')">
+                <i class="bi bi-key"></i>
               </a>
 
               <!-- Botão Remover -->
-              <a href="?remover=<?= $row['id_cliente'] ?>" 
+              <a href="?remover=<?= $row['id_cliente'] ?>"
                  class="btn btn-sm btn-danger"
-                 title="Remover Cliente"
                  onclick="return confirm('Tem certeza que deseja remover este cliente?')">
-                 <i class="bi bi-trash"></i>
+                <i class="bi bi-trash"></i>
               </a>
             </td>
           </tr>
 
-          <!-- Modal Editar Cliente -->
+          <!-- Modal Editar -->
           <div class="modal fade" id="editarModal<?= $row['id_cliente'] ?>" tabindex="-1">
             <div class="modal-dialog">
               <div class="modal-content">
                 <form method="POST">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Editar Cliente</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Cliente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                   </div>
                   <div class="modal-body">
                     <input type="hidden" name="id_cliente" value="<?= $row['id_cliente'] ?>">
                     <div class="mb-3">
                       <label class="form-label">Nome</label>
-                      <input type="text" name="nome" class="form-control" value="<?= $row['nome'] ?>" required>
+                      <input type="text" name="nome" class="form-control" value="<?= htmlspecialchars($row['nome']) ?>" required>
                     </div>
                     <div class="mb-3">
                       <label class="form-label">Telefone</label>
@@ -178,7 +145,7 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente");
                     </div>
                   </div>
                   <div class="modal-footer">
-                    <button type="submit" name="editar" value="1" class="btn btn-success">Salvar</button>
+                    <button type="submit" name="editar" class="btn btn-success"><i class="bi bi-check-circle"></i> Salvar</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                   </div>
                 </form>
@@ -190,10 +157,13 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente");
       </tbody>
     </table>
   <?php else: ?>
-    <div class="alert alert-warning mt-3">Nenhum cliente cadastrado.</div>
+    <div class="alert alert-warning text-center mt-3">Nenhum cliente cadastrado.</div>
   <?php endif; ?>
 
-  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">Voltar</a>
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+  <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+</a>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -1,9 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin_id']) || $_SESSION['tipo'] != "admin") {
-    header("Location: login.php");
-    exit;
-}
+include("conexao.php");
+include("verifica_adm.php");
 ?>
 
 <!DOCTYPE html>

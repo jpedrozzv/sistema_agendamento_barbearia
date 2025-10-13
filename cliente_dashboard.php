@@ -1,10 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['cliente_id']) || $_SESSION['tipo'] != "cliente") {
-    header("Location: login.php");
-    exit;
-}
+include("conexao.php");
+include("verifica_cliente.php");
 ?>
+
 
 <!DOCTYPE html>
 <html lang="pt-br">

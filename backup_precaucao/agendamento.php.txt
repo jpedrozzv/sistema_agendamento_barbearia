@@ -1,0 +1,231 @@
+<?php
+include("conexao.php");
+session_start();
+
+// Só permite acesso se for cliente
+if (!isset($_SESSION['cliente_id']) || $_SESSION['tipo'] != "cliente") {
+    header("Location: login.php");
+    exit;
+}
+
+$id_cliente = $_SESSION['cliente_id'];
+
+// Buscar barbeiros e serviços
+$barbeiros = $conn->query("SELECT * FROM Barbeiro ORDER BY nome");
+$servicos = $conn->query("SELECT * FROM Servico ORDER BY descricao");
+
+// Inserir agendamento no banco após confirmação
+if (isset($_POST['confirmar_agendamento'])) {
+    $id_barbeiro = intval($_POST['id_barbeiro']);
+    $id_servico = intval($_POST['id_servico']);
+    $data = $_POST['data'];
+    $hora = $_POST['hora'];
+    $observacao = trim($_POST['observacao']);
+
+    $sql = "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, status, observacao)
+            VALUES ($id_cliente, $id_barbeiro, $id_servico, '$data', '$hora', 'pendente', '$observacao')";
+
+    if ($conn->query($sql)) {
+        $msg = "✅ Agendamento realizado com sucesso!";
+    } else {
+        $msg = "❌ Erro ao agendar: " . $conn->error;
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Novo Agendamento - Barber La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    body { background-color: #f8f9fa; }
+    .card { border-radius: 12px; }
+    .resumo-box { background: #f1f3f5; padding: 15px; border-radius: 8px; }
+    textarea { resize: none; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="cliente_dashboard.php">💈 Barber La Mafia</a>
+    <span class="navbar-text text-white">Olá, <?= $_SESSION['cliente_nome'] ?></span>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <div class="card shadow p-4">
+    <h3 class="text-center mb-4"><i class="bi bi-calendar-plus"></i> Novo Agendamento</h3>
+
+    <?php if (isset($msg)): ?>
+      <div class="alert alert-info"><?= $msg ?></div>
+    <?php endif; ?>
+
+    <form id="formAgendamento" method="POST">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label"><i class="bi bi-person-badge"></i> Barbeiro</label>
+          <select class="form-select" name="id_barbeiro" id="id_barbeiro" required>
+            <option value="">Selecione o barbeiro</option>
+            <?php while ($b = $barbeiros->fetch_assoc()): ?>
+              <option value="<?= $b['id_barbeiro'] ?>"><?= htmlspecialchars($b['nome']) ?></option>
+            <?php endwhile; ?>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label"><i class="bi bi-scissors"></i> Serviço</label>
+          <select class="form-select" name="id_servico" id="id_servico" required>
+            <option value="">Selecione o serviço</option>
+            <?php while ($s = $servicos->fetch_assoc()): ?>
+              <option value="<?= $s['id_servico'] ?>"><?= htmlspecialchars($s['descricao']) ?> (R$ <?= number_format($s['preco'],2,',','.') ?>)</option>
+            <?php endwhile; ?>
+          </select>
+        </div>
+      </div>
+
+      <!-- Observação destacada -->
+      <div class="mb-4">
+        <label class="form-label"><i class="bi bi-chat-dots"></i> Observações (opcional)</label>
+        <textarea name="observacao" id="observacao" class="form-control" rows="3" placeholder="Ex: Prefiro o corte mais baixo, se possível usar navalha..."></textarea>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label"><i class="bi bi-calendar-event"></i> Data</label>
+          <input type="date" name="data" id="data" class="form-control" required min="<?= date('Y-m-d') ?>">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label"><i class="bi bi-clock"></i> Horário</label>
+          <select class="form-select" name="hora" id="hora" required>
+            <option value="">Selecione a data primeiro</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <button type="button" id="btnConfirmar" class="btn btn-primary btn-lg">
+          <i class="bi bi-check2-circle"></i> Continuar
+        </button>
+      </div>
+
+      <!-- Modal de pré-confirmação -->
+      <div class="modal fade" id="modalConfirmar" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title"><i class="bi bi-eye"></i> Confirmar Agendamento</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="resumo-box">
+                <p><strong>Barbeiro:</strong> <span id="resumo_barbeiro"></span></p>
+                <p><strong>Serviço:</strong> <span id="resumo_servico"></span></p>
+                <p><strong>Data:</strong> <span id="resumo_data"></span></p>
+                <p><strong>Hora:</strong> <span id="resumo_hora"></span></p>
+                <p><strong>Observação:</strong> <span id="resumo_obs"></span></p>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Editar</button>
+              <button type="submit" name="confirmar_agendamento" class="btn btn-success">
+                <i class="bi bi-check-lg"></i> Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <a href="cliente_dashboard.php" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Referências
+const dataInput = document.getElementById("data");
+const barbeiroSelect = document.getElementById("id_barbeiro");
+const horaSelect = document.getElementById("hora");
+
+// Carregar horários quando data ou barbeiro mudar
+dataInput.addEventListener("change", carregarHorarios);
+barbeiroSelect.addEventListener("change", carregarHorarios);
+
+function carregarHorarios() {
+  const data = dataInput.value;
+  const barbeiro = barbeiroSelect.value;
+
+  // Verifica se ambos foram selecionados
+  if (!data || !barbeiro) {
+    horaSelect.innerHTML = "<option value=''>Selecione a data primeiro</option>";
+    return;
+  }
+
+  // Mostra mensagem de carregamento
+  horaSelect.innerHTML = "<option>Carregando horários...</option>";
+
+  // Faz requisição ao PHP
+  fetch(`horarios_dispo.php?id_barbeiro=${barbeiro}&data=${data}`)
+    .then(res => {
+      if (!res.ok) throw new Error("Erro HTTP");
+      return res.json();
+    })
+    .then(resposta => {
+      horaSelect.innerHTML = "";
+
+      if (resposta.erro) {
+        horaSelect.innerHTML = `<option>${resposta.erro}</option>`;
+        return;
+      }
+
+      if (resposta.vazio) {
+        horaSelect.innerHTML = `<option>${resposta.mensagem}</option>`;
+        return;
+      }
+
+      // Adiciona os horários disponíveis no <select>
+      resposta.horarios.forEach(h => {
+        const opt = document.createElement("option");
+        opt.value = h;
+        opt.textContent = h;
+        horaSelect.appendChild(opt);
+      });
+    })
+    .catch(err => {
+      console.error("Erro ao carregar horários:", err);
+      horaSelect.innerHTML = "<option>Erro ao carregar horários</option>";
+    });
+}
+
+// Prévia antes de confirmar
+document.getElementById("btnConfirmar").addEventListener("click", () => {
+  const barbeiro = document.querySelector("#id_barbeiro option:checked").textContent;
+  const servico = document.querySelector("#id_servico option:checked").textContent;
+  const data = document.getElementById("data").value;
+  const hora = document.getElementById("hora").value;
+  const obs = document.getElementById("observacao").value.trim() || "Nenhuma";
+
+  if (!barbeiro || !servico || !data || !hora) {
+    alert("Por favor, preencha todos os campos obrigatórios antes de confirmar.");
+    return;
+  }
+
+  // Preenche o resumo no modal
+  document.getElementById("resumo_barbeiro").textContent = barbeiro;
+  document.getElementById("resumo_servico").textContent = servico;
+  document.getElementById("resumo_data").textContent = new Date(data).toLocaleDateString("pt-BR");
+  document.getElementById("resumo_hora").textContent = hora;
+  document.getElementById("resumo_obs").textContent = obs;
+
+  new bootstrap.Modal(document.getElementById("modalConfirmar")).show();
+});
+</script>
+
+</body>
+</html>

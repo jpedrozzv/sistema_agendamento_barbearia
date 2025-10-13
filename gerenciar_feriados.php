@@ -1,11 +1,9 @@
 <?php
-include("conexao.php");
 session_start();
+include("conexao.php");
+include("verifica_adm.php");
 
-if (!isset($_SESSION['admin_id']) || $_SESSION['tipo'] != "admin") {
-    header("Location: login.php");
-    exit;
-}
+
 
 // Adicionar feriado
 if (isset($_POST['adicionar'])) {
@@ -83,9 +81,9 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
             <td><?= htmlspecialchars($f['descricao']) ?></td>
             <td class="text-center">
               <a href="?remover=<?= $f['id_feriado'] ?>" 
-                 class="btn btn-danger btn-sm"
-                 onclick="return confirm('Remover este feriado?')">
-                 Remover
+                  class="btn btn-danger btn-sm"
+                  onclick="return confirm('Remover este feriado?')">
+                  Remover
               </a>
             </td>
           </tr>
@@ -96,7 +94,10 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
     <div class="alert alert-warning">Nenhum feriado cadastrado.</div>
   <?php endif; ?>
 
-  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">Voltar</a>
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+  <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+</a>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
