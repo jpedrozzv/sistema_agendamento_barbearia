@@ -1,0 +1,37 @@
+1-mudar a mensagem do localhost ao criar, editar ou remover, padronizando com todas as telas do sistema.
+
+telas do cliente:
+-após agendar um serviço;
+-após cancelar um serviço;
+
+
+telas do adm:
+-após redefinir a senha do usuário;
+-após excluir um cliente;
+-após excluir um agendamento;
+-após excluir um serviço;
+-após remover uma data cadastrada como feriado;
+
+
+2-adicionar limites de caracteres na senha, email , telefone quando o cliente vai criar o usuário; não permitir colocar letras na parte do telefone.
+ -adicionar limite  na parte de add observações no corte;
+
+
+
+3-adicionar uma função caso o cliente esqueça sua senha, podendo redefini-la mandando um email, ou sms para ele.
+
+
+
+4-mudar o calendário, deixar ele visivelmente mais bonito e mais intuitivo, deixando dias que são feriados em vermelho e dias passados em cinza mais escuro, e dias que estão lotados em vermelho também.
+
+
+
+5-abaixar a tag da barbearia da tela dos cliente, padronizando com a tela do adm
+
+
+
+6-no botão voltar ao painel na parte de gerenciar feriados, adicionar a setinha padronizando com as demais telas
+
+
+
+-Mudar o sistema todo visualmente, deixando ele mais bonito (parte final).

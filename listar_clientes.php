@@ -2,8 +2,7 @@
 session_start();
 include("conexao.php");
 include("verifica_adm.php");
-
-
+include("alerta.php");
 
 // --- REMOVER CLIENTE ---
 if (isset($_GET['remover'])) {
@@ -25,9 +24,7 @@ if (isset($_POST['editar'])) {
     $telefone = trim($_POST['telefone']);
     $email = trim($_POST['email']);
 
-    $sql = "UPDATE Cliente 
-            SET nome='$nome', telefone='$telefone', email='$email' 
-            WHERE id_cliente=$id";
+    $sql = "UPDATE Cliente SET nome='$nome', telefone='$telefone', email='$email' WHERE id_cliente=$id";
     if ($conn->query($sql)) {
         header("Location: listar_clientes.php?msg=ok_edit");
         exit;
@@ -44,7 +41,7 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Gerenciar Clientes - Barber La Mafia</title>
+  <title>Gerenciar Clientes - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
@@ -60,18 +57,37 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
 <div class="container mt-4">
   <h2 class="text-center mb-4">👥 Gerenciar Clientes</h2>
 
-  <!-- ALERTAS UNIFICADOS -->
+  <!-- ALERTAS PADRONIZADOS -->
   <?php if (isset($_GET['msg'])): ?>
     <div class="alert alert-dismissible fade show mt-3 
       <?= str_contains($_GET['msg'], 'erro') ? 'alert-danger' : 'alert-success' ?>" role="alert">
       <?php
         switch ($_GET['msg']) {
-          case 'ok_edit':   echo "✏️ Alterações salvas com sucesso!"; break;
-          case 'ok_remove': echo "🗑️ Cliente removido com sucesso!"; break;
-          case 'erro_edit': echo "❌ Erro ao atualizar cliente."; break;
-          case 'erro_remove': echo "❌ Erro ao remover cliente."; break;
-          case 'senha_ok':  echo "🔑 Senha redefinida com sucesso! Nova senha: <strong>1234</strong>"; break;
-          case 'senha_erro':echo "❌ Erro ao redefinir senha."; break;
+          case 'ok_edit':
+            echo "✏️ Alterações salvas com sucesso!";
+            break;
+          case 'ok_remove':
+            echo "🗑️ Cliente removido com sucesso!";
+            break;
+          case 'erro_edit':
+            echo "❌ Erro ao atualizar cliente.";
+            break;
+          case 'erro_remove':
+            echo "❌ Erro ao remover cliente.";
+            break;
+          case 'senha_ok':
+            echo "
+            <div class='text-center'>
+              <h5 class='fw-bold text-success'><i class='bi bi-unlock-fill'></i> Senha redefinida com sucesso!</h5>
+              <p class='mb-0'>A nova senha padrão é:
+                <span class='badge bg-dark text-white px-2 py-1'>1234</span>
+              </p>
+              <small class='text-muted'>Peça ao cliente para alterá-la após o próximo login.</small>
+            </div>";
+            break;
+          case 'senha_erro':
+            echo "❌ Erro ao redefinir senha.";
+            break;
         }
       ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -98,23 +114,17 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
             <td><?= $row['email'] ?></td>
             <td>
               <!-- Botão Editar -->
-              <button class="btn btn-sm btn-warning"
-                      data-bs-toggle="modal"
-                      data-bs-target="#editarModal<?= $row['id_cliente'] ?>">
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_cliente'] ?>">
                 <i class="bi bi-pencil"></i>
               </button>
 
               <!-- Botão Redefinir Senha -->
-              <a href="redefinir_senha.php?id=<?= $row['id_cliente'] ?>"
-                 class="btn btn-sm btn-secondary"
-                 onclick="return confirm('Redefinir a senha deste cliente para 1234?')">
+              <a href="redefinir_senha.php?id=<?= $row['id_cliente'] ?>" class="btn btn-sm btn-secondary">
                 <i class="bi bi-key"></i>
               </a>
 
               <!-- Botão Remover -->
-              <a href="?remover=<?= $row['id_cliente'] ?>"
-                 class="btn btn-sm btn-danger"
-                 onclick="return confirm('Tem certeza que deseja remover este cliente?')">
+              <a href="?remover=<?= $row['id_cliente'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Remover este cliente?')">
                 <i class="bi bi-trash"></i>
               </a>
             </td>
@@ -145,7 +155,9 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
                     </div>
                   </div>
                   <div class="modal-footer">
-                    <button type="submit" name="editar" class="btn btn-success"><i class="bi bi-check-circle"></i> Salvar</button>
+                    <button type="submit" name="editar" class="btn btn-success">
+                      <i class="bi bi-check-circle"></i> Salvar
+                    </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                   </div>
                 </form>
@@ -161,9 +173,8 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
   <?php endif; ?>
 
   <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
-  <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
-</a>
-
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

@@ -2,27 +2,38 @@
 session_start();
 include("conexao.php");
 include("verifica_adm.php");
+include("alerta.php");
+
+$msg = null;
 
 
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: login.php");
+    exit;
+}
 
-// Adicionar feriado
+// --- ADICIONAR FERIADO ---
 if (isset($_POST['adicionar'])) {
     $data = $_POST['data'];
-    $descricao = $_POST['descricao'];
-    $conn->query("INSERT INTO Feriado (data, descricao) VALUES ('$data', '$descricao')");
-    header("Location: gerenciar_feriados.php?msg=ok");
-    exit;
+    $descricao = trim($_POST['descricao']);
+    if ($conn->query("INSERT INTO Feriado (data, descricao) VALUES ('$data', '$descricao')")) {
+        $msg = ['success', '✅ Feriado adicionado com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao adicionar feriado.'];
+    }
 }
 
-// Remover feriado
-if (isset($_GET['remover'])) {
-    $id = intval($_GET['remover']);
-    $conn->query("DELETE FROM Feriado WHERE id_feriado = $id");
-    header("Location: gerenciar_feriados.php?msg=remove");
-    exit;
+// --- REMOVER FERIADO ---
+if (isset($_POST['remover_confirmado'])) {
+    $id = intval($_POST['id_feriado']);
+    if ($conn->query("DELETE FROM Feriado WHERE id_feriado = $id")) {
+        $msg = ['success', '🗑️ Feriado removido com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao remover feriado.'];
+    }
 }
 
-// Buscar feriados
+// --- BUSCAR FERIADOS ---
 $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
 ?>
 
@@ -30,8 +41,9 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Gerenciar Feriados - Barber La Mafia</title>
+  <title>📆 Gerenciar Feriados - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body class="bg-light">
 
@@ -43,16 +55,14 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
 </nav>
 
 <div class="container mt-4">
-  <h2>📅 Gerenciar Feriados</h2>
+  <h2 class="text-center mb-4">📅 Gerenciar Feriados</h2>
 
-  <?php if (isset($_GET['msg']) && $_GET['msg'] == 'ok'): ?>
-    <div class="alert alert-success">✅ Feriado adicionado com sucesso!</div>
-  <?php elseif (isset($_GET['msg']) && $_GET['msg'] == 'remove'): ?>
-    <div class="alert alert-info">🗑️ Feriado removido com sucesso!</div>
-  <?php endif; ?>
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
 
-  <form method="POST" class="card p-3 shadow-sm mb-4">
-    <div class="row">
+  <!-- Formulário de novo feriado -->
+  <div class="card shadow-sm p-3 mb-4">
+    <h5><i class="bi bi-plus-circle"></i> Adicionar Novo Feriado</h5>
+    <form method="POST" class="row g-3">
       <div class="col-md-4">
         <input type="date" name="data" class="form-control" required>
       </div>
@@ -60,44 +70,70 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
         <input type="text" name="descricao" class="form-control" placeholder="Descrição do feriado" required>
       </div>
       <div class="col-md-2">
-        <button type="submit" name="adicionar" class="btn btn-success w-100">Adicionar</button>
+        <button type="submit" name="adicionar" class="btn btn-success w-100">
+          <i class="bi bi-check-circle"></i> Adicionar
+        </button>
       </div>
-    </div>
-  </form>
+    </form>
+  </div>
 
+  <!-- Tabela de feriados -->
   <?php if ($feriados->num_rows > 0): ?>
-    <table class="table table-bordered table-striped shadow-sm">
-      <thead class="table-dark">
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
         <tr>
           <th>Data</th>
           <th>Descrição</th>
-          <th style="width: 100px;">Ações</th>
+          <th style="width: 130px;">Ações</th>
         </tr>
       </thead>
-      <tbody>
-        <?php while($f = $feriados->fetch_assoc()): ?>
+      <tbody class="text-center">
+        <?php while ($f = $feriados->fetch_assoc()): ?>
           <tr>
             <td><?= date('d/m/Y', strtotime($f['data'])) ?></td>
             <td><?= htmlspecialchars($f['descricao']) ?></td>
-            <td class="text-center">
-              <a href="?remover=<?= $f['id_feriado'] ?>" 
-                  class="btn btn-danger btn-sm"
-                  onclick="return confirm('Remover este feriado?')">
-                  Remover
-              </a>
+            <td>
+              <button class="btn btn-sm btn-danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#removerModal<?= $f['id_feriado'] ?>">
+                <i class="bi bi-trash"></i>
+              </button>
             </td>
           </tr>
+
+          <!-- Modal Remover -->
+          <div class="modal fade" id="removerModal<?= $f['id_feriado'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar exclusão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    Deseja realmente remover o feriado <strong><?= htmlspecialchars($f['descricao']) ?></strong>
+                    (<em><?= date('d/m/Y', strtotime($f['data'])) ?></em>)?
+                    <input type="hidden" name="id_feriado" value="<?= $f['id_feriado'] ?>">
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="remover_confirmado" class="btn btn-danger">Sim, remover</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
         <?php endwhile; ?>
       </tbody>
     </table>
   <?php else: ?>
-    <div class="alert alert-warning">Nenhum feriado cadastrado.</div>
+    <div class="alert alert-warning text-center mt-3">Nenhum feriado cadastrado.</div>
   <?php endif; ?>
 
   <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
-  <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
-</a>
-
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

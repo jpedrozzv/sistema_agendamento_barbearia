@@ -8,7 +8,7 @@ include("verifica_cliente.php");
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Painel do Cliente - Barber La Mafia</title>
+  <title>Painel do Cliente - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -32,7 +32,7 @@ include("verifica_cliente.php");
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
   <div class="container-fluid">
-    <a class="navbar-brand fw-bold" href="cliente_dashboard.php">💈 Barber La Mafia</a>
+    <a class="navbar-brand fw-bold" href="cliente_dashboard.php">💈 Barbearia La Mafia</a>
     <div class="d-flex align-items-center">
       <span class="text-white me-3">
         <i class="bi bi-person-circle"></i> <?= $_SESSION['cliente_nome'] ?>
@@ -75,7 +75,7 @@ include("verifica_cliente.php");
 <!-- Rodapé -->
 <footer>
   <img class="mafia-icon" src="https://cdn-icons-png.flaticon.com/512/2073/2073905.png" alt="Mafioso">
-  <span>© 2025 <strong>Barber La Mafia</strong> - Todos os direitos reservados</span>
+  <span>© 2025 <strong>Barbearia La Mafia</strong> - Todos os direitos reservados</span>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

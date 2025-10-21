@@ -8,7 +8,7 @@ include("verifica_adm.php");
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>Painel do Admin - Barber La Mafia</title>
+  <title>Painel do Admin - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <style>
@@ -66,7 +66,7 @@ include("verifica_adm.php");
         <i class="bi bi-calendar-check display-4 text-primary"></i>
         <h5 class="card-title mt-3">Agendamentos</h5>
         <p class="card-text text-muted">Controle todos os agendamentos da barbearia.</p>
-        <a href="listar_agendamentos.php" class="btn btn-primary">Gerenciar</a>
+        <a href="listar_agendamentos_adm.php" class="btn btn-primary">Gerenciar</a>
       </div>
     </div>
 

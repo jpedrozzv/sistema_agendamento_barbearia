@@ -36,7 +36,7 @@ $agendamentos = $conn->query("
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="index.php">💈 Barbearia</a>
+    <a class="navbar-brand" href="index.php">💈 Barbearia La Mafia</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNav">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -54,7 +54,7 @@ $agendamentos = $conn->query("
 <!-- Conteúdo principal -->
 <div class="container mt-5">
   <div class="text-center">
-    <h1 class="mb-4">Sistema de Agendamento - Barbearia</h1>
+    <h1 class="mb-4">Sistema de Agendamento - Barbearia La Mafia</h1>
     <p class="lead">Gerencie seus clientes e agendamentos de forma simples e rápida.</p>
   </div>
 

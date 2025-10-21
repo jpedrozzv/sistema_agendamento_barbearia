@@ -1,0 +1,2116 @@
+admin_dashboard.php:
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel do Admin - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    footer {
+      background-color: #212529;
+      color: #ccc;
+      text-align: center;
+      padding: 15px 0;
+      margin-top: 50px;
+    }
+    .mafia-icon {
+      width: 28px;
+      height: 28px;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="admin_dashboard.php">💈 Painel do Admin</a>
+    <div class="d-flex align-items-center">
+      <span class="text-white me-3">
+        <i class="bi bi-person-circle"></i> <?= $_SESSION['admin_nome'] ?>
+      </span>
+      <a href="logout.php" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-box-arrow-right"></i> Sair
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Conteúdo principal -->
+<div class="container mt-5">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold">Painel do Dono da Barbearia</h1>
+    <p class="lead">Gerencie clientes, agendamentos e serviços de forma prática.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center p-4 border-0">
+        <i class="bi bi-people display-4 text-secondary"></i>
+        <h5 class="card-title mt-3">Clientes</h5>
+        <p class="card-text text-muted">Visualize, edite e remova clientes cadastrados.</p>
+        <a href="listar_clientes.php" class="btn btn-secondary">Gerenciar</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center p-4 border-0">
+        <i class="bi bi-calendar-check display-4 text-primary"></i>
+        <h5 class="card-title mt-3">Agendamentos</h5>
+        <p class="card-text text-muted">Controle todos os agendamentos da barbearia.</p>
+        <a href="listar_agendamentos_adm.php" class="btn btn-primary">Gerenciar</a>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm text-center p-4 border-0">
+        <i class="bi bi-scissors display-4 text-success"></i>
+        <h5 class="card-title mt-3">Serviços</h5>
+        <p class="card-text text-muted">Adicione ou altere serviços e preços.</p>
+        <a href="listar_servicos.php" class="btn btn-success">Gerenciar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="col-md-4 mt-4">
+  <div class="card shadow-sm text-center p-3">
+    <i class="bi bi-calendar-x display-4 text-danger"></i>
+    <h5 class="card-title mt-2">Feriados</h5>
+    <p class="card-text">Adicione e gerencie feriados e dias de folga.</p>
+    <a href="gerenciar_feriados.php" class="btn btn-danger">Gerenciar</a>
+  </div>
+</div>
+
+
+<!-- Rodapé -->
+<footer>
+  <img class="mafia-icon" src="https://cdn-icons-png.flaticon.com/512/2073/2073905.png" alt="Mafioso">
+  <span>© 2025 <strong>Barber La Mafia</strong> - Todos os direitos reservados</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+======================================================================
+
+agendamento.php:
+<?php
+session_start();
+include("conexao.php");
+include("verifica_cliente.php");
+include("alerta.php");
+
+$id_cliente = $_SESSION['cliente_id'];
+$msg = null;
+
+// --- SALVAR AGENDAMENTO ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirmar_agendamento'])) {
+    $id_barbeiro = intval($_POST['id_barbeiro']);
+    $id_servico  = intval($_POST['id_servico']);
+    $data = $_POST['data'];
+    $hora = $_POST['hora'];
+    $observacao = trim($_POST['observacao']);
+
+    // Verifica se a data é feriado
+    $isFeriado = $conn->query("SELECT 1 FROM Feriado WHERE data = '$data'")->num_rows > 0;
+
+    if ($isFeriado) {
+        $msg = ['danger', '🚫 Não é possível agendar em feriados.'];
+    } else {
+        // Verifica se o horário está ocupado
+        $verifica = $conn->query("SELECT * FROM Agendamento WHERE data='$data' AND hora='$hora' AND id_barbeiro=$id_barbeiro");
+        if ($verifica->num_rows > 0) {
+            $msg = ['danger', '⚠️ Horário já ocupado. Escolha outro.'];
+        } else {
+            $sql = "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, status, observacao)
+                    VALUES ($id_cliente, $id_barbeiro, $id_servico, '$data', '$hora', 'pendente', '$observacao')";
+            if ($conn->query($sql)) {
+                $msg = ['success', '✅ Agendamento realizado com sucesso!'];
+            } else {
+                $msg = ['danger', '❌ Erro ao salvar agendamento. Tente novamente.'];
+            }
+        }
+    }
+}
+
+// --- LISTAR BARBEIROS ---
+$barbeiros = $conn->query("SELECT * FROM Barbeiro ORDER BY nome ASC");
+
+// --- LISTAR SERVIÇOS ---
+$servicos = $conn->query("SELECT * FROM Servico ORDER BY descricao ASC");
+
+// --- LISTAR FERIADOS ---
+$feriados = [];
+$resFeriados = $conn->query("SELECT data FROM Feriado");
+while ($f = $resFeriados->fetch_assoc()) {
+    $feriados[] = $f['data'];
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>📅 Novo Agendamento - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .btn-horario {
+      min-width: 90px;
+      margin: 3px;
+      border-radius: 8px;
+    }
+    .btn-horario.disponivel { background-color: #28a745; color: #fff; }
+    .btn-horario.ocupado { background-color: #6c757d; color: #fff; cursor: not-allowed; }
+    .btn-horario.selecionado { background-color: #0d6efd !important; color: #fff; }
+    .calendar-disabled {
+      background-color: #f8d7da !important;
+      color: #721c24 !important;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="cliente_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">📅 Novo Agendamento</h2>
+
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
+
+  <div class="card shadow-sm p-4">
+    <form method="POST">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Barbeiro</label>
+          <select name="id_barbeiro" class="form-select" required>
+            <option value="">Selecione</option>
+            <?php while ($b = $barbeiros->fetch_assoc()): ?>
+              <option value="<?= $b['id_barbeiro'] ?>"><?= htmlspecialchars($b['nome']) ?></option>
+            <?php endwhile; ?>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Serviço</label>
+          <select name="id_servico" class="form-select" required>
+            <option value="">Selecione</option>
+            <?php while ($s = $servicos->fetch_assoc()): ?>
+              <option value="<?= $s['id_servico'] ?>">
+                <?= htmlspecialchars($s['descricao']) ?> (<?= $s['duracao'] ?> min)
+              </option>
+            <?php endwhile; ?>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <label class="form-label">Data</label>
+          <input type="date" name="data" id="data" class="form-control" required>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Horários Disponíveis</label><br>
+          <div id="horarios" class="d-flex flex-wrap">
+            <span class="text-muted">Selecione a data primeiro</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Observação (opcional)</label>
+        <textarea name="observacao" class="form-control" rows="2" placeholder="Ex: Prefiro máquina 0 ou navalha."></textarea>
+      </div>
+
+      <input type="hidden" name="hora" id="horaSelecionada">
+
+      <div class="text-center">
+        <button type="submit" name="confirmar_agendamento" class="btn btn-success px-4">
+          <i class="bi bi-calendar-check"></i> Confirmar Agendamento
+        </button>
+        <a href="cliente_dashboard.php" class="btn btn-secondary px-4 ms-2">
+          <i class="bi bi-arrow-left-circle"></i> Voltar
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const feriados = <?= json_encode($feriados) ?>;
+
+// Desabilita feriados e domingos
+const inputData = document.getElementById('data');
+inputData.addEventListener('input', () => {
+  const data = inputData.value;
+  const dia = new Date(data + "T00:00:00").getDay();
+  
+  if (feriados.includes(data) || dia === 0) {
+    inputData.value = "";
+    alert("🚫 Não é possível agendar em domingos ou feriados.");
+    return;
+  }
+
+  fetch(`horarios_dispo.php?data=${data}`)
+    .then(resp => resp.json())
+    .then(horarios => {
+      const div = document.getElementById('horarios');
+      div.innerHTML = "";
+      horarios.forEach(h => {
+        const btn = document.createElement('button');
+        btn.type = "button";
+        btn.className = "btn btn-horario " + (h.disponivel ? "disponivel" : "ocupado");
+        btn.textContent = h.hora;
+        btn.disabled = !h.disponivel;
+        btn.onclick = () => {
+          document.querySelectorAll(".btn-horario").forEach(b => b.classList.remove("selecionado"));
+          btn.classList.add("selecionado");
+          document.getElementById('horaSelecionada').value = h.hora;
+        };
+        div.appendChild(btn);
+      });
+    });
+});
+</script>
+</body>
+</html>
+
+alerta.php:
+<?php
+function mostrarAlerta($tipo, $mensagem, $icone = "ℹ️") {
+    echo '
+    <div class="alert alert-' . $tipo . ' alert-dismissible fade show mt-3" role="alert">
+        ' . $icone . ' ' . $mensagem . '
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>';
+}
+?>
+====================================================================================
+alerta.php
+
+<?php
+function mostrarAlerta($tipo, $mensagem, $icone = "ℹ️") {
+    echo '
+    <div class="alert alert-' . $tipo . ' alert-dismissible fade show mt-3" role="alert">
+        ' . $icone . ' ' . $mensagem . '
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>';
+}
+?>
+
+=================================================================================================
+cadastro cliente.php
+
+<?php
+include("conexao.php");
+session_start();
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nome  = $_POST['nome'];
+    $telefone = $_POST['telefone'];
+    $email = $_POST['email'];
+    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+
+
+    // Verifica se o e-mail já existe
+    $check = $conn->query("SELECT * FROM Cliente WHERE email='$email'");
+    if ($check->num_rows > 0) {
+        $msg = "<div class='alert alert-danger'>❌ Este e-mail já está cadastrado!</div>";
+    } else {
+        $sql = "INSERT INTO Cliente (nome, telefone, email, senha) 
+                VALUES ('$nome', '$telefone', '$email', '$senha')";
+        if ($conn->query($sql) === TRUE) {
+            $msg = "<div class='alert alert-success text-center'>
+                        ✅ Cadastro realizado com sucesso!<br>
+                        Você será redirecionado para o login...
+                    </div>";
+            header("refresh:4;url=login.php"); // redireciona em 4s
+        } else {
+            $msg = "<div class='alert alert-danger'>❌ Erro: " . $conn->error . "</div>";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro de Cliente - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm p-4">
+        <h3 class="text-center mb-3">📝 Cadastro de Cliente</h3>
+
+        <?php if (isset($msg)) echo $msg; ?>
+
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Nome</label>
+            <input type="text" name="nome" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Telefone</label>
+            <input type="text" name="telefone" class="form-control" placeholder="(XX) XXXXX-XXXX" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">E-mail</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Senha</label>
+            <input type="password" name="senha" class="form-control" required>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">Cadastrar</button>
+        </form>
+
+        <div class="text-center mt-3">
+          <p>Já tem conta? <a href="login.php">Entrar</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+======================================================================================
+cliente dashboard.php
+
+<?php
+include("conexao.php");
+include("verifica_cliente.php");
+?>
+
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel do Cliente - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    footer {
+      background-color: #212529;
+      color: #ccc;
+      text-align: center;
+      padding: 15px 0;
+      margin-top: 50px;
+    }
+    .mafia-icon {
+      width: 28px;
+      height: 28px;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="cliente_dashboard.php">💈 Barbearia La Mafia</a>
+    <div class="d-flex align-items-center">
+      <span class="text-white me-3">
+        <i class="bi bi-person-circle"></i> <?= $_SESSION['cliente_nome'] ?>
+      </span>
+      <a href="logout.php" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-box-arrow-right"></i> Sair
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- Conteúdo principal -->
+<div class="container mt-5">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold">Painel do Cliente</h1>
+    <p class="lead">Agende novos horários e acompanhe seus agendamentos.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card shadow-sm text-center p-4 border-0">
+        <i class="bi bi-calendar-plus display-4 text-primary"></i>
+        <h5 class="card-title mt-3">Novo Agendamento</h5>
+        <p class="card-text text-muted">Agende um novo horário na barbearia.</p>
+        <a href="agendamento.php" class="btn btn-primary">Agendar</a>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow-sm text-center p-4 border-0">
+        <i class="bi bi-list-check display-4 text-success"></i>
+        <h5 class="card-title mt-3">Meus Agendamentos</h5>
+        <p class="card-text text-muted">Veja e cancele seus agendamentos.</p>
+        <a href="meus_agendamentos.php" class="btn btn-success">Ver Agendamentos</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rodapé -->
+<footer>
+  <img class="mafia-icon" src="https://cdn-icons-png.flaticon.com/512/2073/2073905.png" alt="Mafioso">
+  <span>© 2025 <strong>Barbearia La Mafia</strong> - Todos os direitos reservados</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+===================================================================================
+
+conexao.php
+
+<?php
+$host = "localhost";   
+$user = "root";        
+$pass = "";            
+$db   = "barbearia";   
+
+
+$conn = new mysqli($host, $user, $pass, $db);
+
+
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
+}
+
+?>
+
+===================================================================================
+
+gerenciar feriados.php
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+include("alerta.php");
+
+$msg = null;
+
+// --- ADICIONAR FERIADO ---
+if (isset($_POST['adicionar'])) {
+    $data = $_POST['data'];
+    $descricao = trim($_POST['descricao']);
+    if ($conn->query("INSERT INTO Feriado (data, descricao) VALUES ('$data', '$descricao')")) {
+        $msg = ['success', '✅ Feriado adicionado com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao adicionar feriado.'];
+    }
+}
+
+// --- REMOVER FERIADO ---
+if (isset($_POST['remover_confirmado'])) {
+    $id = intval($_POST['id_feriado']);
+    if ($conn->query("DELETE FROM Feriado WHERE id_feriado = $id")) {
+        $msg = ['success', '🗑️ Feriado removido com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao remover feriado.'];
+    }
+}
+
+// --- BUSCAR FERIADOS ---
+$feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>📆 Gerenciar Feriados - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="admin_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">📅 Gerenciar Feriados</h2>
+
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
+
+  <!-- Formulário de novo feriado -->
+  <div class="card shadow-sm p-3 mb-4">
+    <h5><i class="bi bi-plus-circle"></i> Adicionar Novo Feriado</h5>
+    <form method="POST" class="row g-3">
+      <div class="col-md-4">
+        <input type="date" name="data" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <input type="text" name="descricao" class="form-control" placeholder="Descrição do feriado" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" name="adicionar" class="btn btn-success w-100">
+          <i class="bi bi-check-circle"></i> Adicionar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela de feriados -->
+  <?php if ($feriados->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th style="width: 130px;">Ações</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <?php while ($f = $feriados->fetch_assoc()): ?>
+          <tr>
+            <td><?= date('d/m/Y', strtotime($f['data'])) ?></td>
+            <td><?= htmlspecialchars($f['descricao']) ?></td>
+            <td>
+              <button class="btn btn-sm btn-danger"
+                      data-bs-toggle="modal"
+                      data-bs-target="#removerModal<?= $f['id_feriado'] ?>">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Modal Remover -->
+          <div class="modal fade" id="removerModal<?= $f['id_feriado'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar exclusão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    Deseja realmente remover o feriado <strong><?= htmlspecialchars($f['descricao']) ?></strong>
+                    (<em><?= date('d/m/Y', strtotime($f['data'])) ?></em>)?
+                    <input type="hidden" name="id_feriado" value="<?= $f['id_feriado'] ?>">
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="remover_confirmado" class="btn btn-danger">Sim, remover</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning text-center mt-3">Nenhum feriado cadastrado.</div>
+  <?php endif; ?>
+
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+============================================================
+
+hash.php
+
+<?php
+echo password_hash("1234", PASSWORD_DEFAULT);
+?>
+
+==========================================================================
+horarios_dispo.php
+<?php
+include("conexao.php");
+
+if (!isset($_GET['id_barbeiro']) || !isset($_GET['data'])) {
+    echo json_encode(["vazio" => true, "erro" => "Parâmetros ausentes"]);
+    exit;
+}
+
+$id_barbeiro = intval($_GET['id_barbeiro']);
+$data = $_GET['data'];
+
+// 🔍 Verifica se é feriado
+$feriado_sql = "SELECT * FROM Feriado WHERE data = '$data'";
+$feriado_res = $conn->query($feriado_sql);
+
+if ($feriado_res && $feriado_res->num_rows > 0) {
+    $feriado = $feriado_res->fetch_assoc();
+    echo json_encode([
+        "vazio" => true,
+        "erro" => "Feriado: " . $feriado['descricao']
+    ]);
+    exit;
+}
+
+// 🕘 Horários padrão (9h às 18h, de meia em meia hora)
+$horarios = [];
+for ($h = 9; $h <= 18; $h++) {
+    foreach ([0, 30] as $m) {
+        $hora = sprintf("%02d:%02d", $h, $m);
+        $horarios[] = $hora;
+    }
+}
+
+// 🔎 Busca agendamentos do barbeiro nesse dia
+$sql = "SELECT hora, s.duracao 
+        FROM Agendamento a
+        JOIN Servico s ON a.id_servico = s.id_servico
+        WHERE a.id_barbeiro = $id_barbeiro
+        AND a.data = '$data'
+        AND a.status IN ('pendente','confirmado')";
+$res = $conn->query($sql);
+
+// ⛔ Remove horários ocupados
+$ocupados = [];
+while ($row = $res->fetch_assoc()) {
+    $inicio = strtotime($row['hora']);
+    $fim = strtotime("+{$row['duracao']} minutes", $inicio);
+    foreach ($horarios as $h) {
+        $t = strtotime($h);
+        if ($t >= $inicio && $t < $fim) {
+            $ocupados[] = $h;
+        }
+    }
+}
+
+// ✅ Retorna horários disponíveis
+$disponiveis = array_values(array_diff($horarios, $ocupados));
+
+echo json_encode([
+    "vazio" => count($disponiveis) == 0,
+    "horarios" => $disponiveis
+]);
+?>
+==================================================================================
+index.php
+
+<?php
+include("conexao.php");
+
+session_start();
+if (!isset($_SESSION['cliente_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// Buscar últimos 5 clientes
+$clientes = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente DESC LIMIT 5");
+
+// Buscar últimos 5 agendamentos
+$agendamentos = $conn->query("
+    SELECT a.id_agendamento, c.nome AS cliente, s.descricao AS servico, a.data, a.hora, a.status
+    FROM Agendamento a
+    JOIN Cliente c ON a.id_cliente = c.id_cliente
+    JOIN Servico s ON a.id_servico = s.id_servico
+    ORDER BY a.data DESC, a.hora DESC
+    LIMIT 5
+");
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Barbearia - Sistema de Agendamento</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.php">💈 Barbearia La Mafia</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="menuNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link" href="cadastro_cliente.php"><i class="bi bi-person-plus"></i> Cadastrar Cliente</a></li>
+        <li class="nav-item"><a class="nav-link" href="agendamento.php"><i class="bi bi-calendar-plus"></i> Novo Agendamento</a></li>
+        <li class="nav-item"><a class="nav-link" href="listar_agendamentos.php"><i class="bi bi-list-check"></i> Listar Agendamentos</a></li>
+        <li class="nav-item"><a class="nav-link" href="listar_clientes.php"><i class="bi bi-people"></i> Listar Clientes</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Conteúdo principal -->
+<div class="container mt-5">
+  <div class="text-center">
+    <h1 class="mb-4">Sistema de Agendamento - Barbearia La Mafia</h1>
+    <p class="lead">Gerencie seus clientes e agendamentos de forma simples e rápida.</p>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center p-3">
+        <i class="bi bi-person-plus display-4 text-success"></i>
+        <h5 class="card-title mt-2">Cadastrar Cliente</h5>
+        <p class="card-text">Adicione novos clientes ao sistema.</p>
+        <a href="cadastro_cliente.php" class="btn btn-success">Cadastrar</a>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center p-3">
+        <i class="bi bi-calendar-plus display-4 text-primary"></i>
+        <h5 class="card-title mt-2">Novo Agendamento</h5>
+        <p class="card-text">Agende um horário para o cliente.</p>
+        <a href="agendamento.php" class="btn btn-primary">Agendar</a>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center p-3">
+        <i class="bi bi-list-check display-4 text-dark"></i>
+        <h5 class="card-title mt-2">Lista de Agendamentos</h5>
+        <p class="card-text">Veja todos os horários agendados.</p>
+        <a href="listar_agendamentos.php" class="btn btn-dark">Listar</a>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow-sm text-center p-3">
+        <i class="bi bi-people display-4 text-secondary"></i>
+        <h5 class="card-title mt-2">Lista de Clientes</h5>
+        <p class="card-text">Veja todos os clientes cadastrados.</p>
+        <a href="listar_clientes.php" class="btn btn-secondary">Listar</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Últimos clientes -->
+  <div class="mt-5">
+    <h3><i class="bi bi-people"></i> Últimos Clientes Cadastrados</h3>
+    <?php if ($clientes->num_rows > 0): ?>
+      <table class="table table-bordered table-hover shadow-sm mt-3">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th>Email</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php while($c = $clientes->fetch_assoc()): ?>
+            <tr>
+              <td><?= $c['id_cliente'] ?></td>
+              <td><?= $c['nome'] ?></td>
+              <td><?= $c['telefone'] ?></td>
+              <td><?= $c['email'] ?></td>
+            </tr>
+          <?php endwhile; ?>
+        </tbody>
+      </table>
+      <a href="listar_clientes.php" class="btn btn-secondary">Ver todos os clientes</a>
+    <?php else: ?>
+      <div class="alert alert-warning mt-3">Nenhum cliente cadastrado ainda.</div>
+    <?php endif; ?>
+  </div>
+
+  <!-- Últimos agendamentos -->
+  <div class="mt-5">
+    <h3><i class="bi bi-calendar-check"></i> Últimos Agendamentos</h3>
+    <?php if ($agendamentos->num_rows > 0): ?>
+      <table class="table table-bordered table-hover shadow-sm mt-3">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php while($a = $agendamentos->fetch_assoc()): ?>
+            <tr>
+              <td><?= $a['id_agendamento'] ?></td>
+              <td><?= $a['cliente'] ?></td>
+              <td><?= $a['servico'] ?></td>
+              <td><?= date('d/m/Y', strtotime($a['data'])) ?></td>
+              <td><?= date('H:i', strtotime($a['hora'])) ?></td>
+              <td>
+                <?php
+                  $badge = "secondary";
+                  if ($a['status'] == "pendente") $badge = "warning";
+                  if ($a['status'] == "confirmado") $badge = "primary";
+                  if ($a['status'] == "concluido") $badge = "success";
+                  if ($a['status'] == "cancelado") $badge = "danger";
+                ?>
+                <span class="badge bg-<?= $badge ?>"><?= ucfirst($a['status']) ?></span>
+              </td>
+            </tr>
+          <?php endwhile; ?>
+        </tbody>
+      </table>
+      <a href="listar_agendamentos.php" class="btn btn-secondary">Ver todos os agendamentos</a>
+    <?php else: ?>
+      <div class="alert alert-warning mt-3">Nenhum agendamento registrado ainda.</div>
+    <?php endif; ?>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+===================================================================================
+listar_agendamentos_adm.php
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+include("alerta.php");
+
+$msg = null;
+
+// --- REMOVER AGENDAMENTO ---
+if (isset($_POST['remover_confirmado'])) {
+    $id = intval($_POST['id_agendamento']);
+    if ($conn->query("DELETE FROM Agendamento WHERE id_agendamento = $id")) {
+        $msg = ['success', '🗑️ Agendamento removido com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao remover agendamento.'];
+    }
+}
+
+// --- EDITAR AGENDAMENTO ---
+if (isset($_POST['editar'])) {
+    $id = intval($_POST['id_agendamento']);
+    $data = $_POST['data'];
+    $hora = $_POST['hora'];
+    $status = $_POST['status'];
+
+    if ($conn->query("UPDATE Agendamento SET data='$data', hora='$hora', status='$status' WHERE id_agendamento=$id")) {
+        $msg = ['success', '✏️ Agendamento atualizado com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao atualizar agendamento.'];
+    }
+}
+
+// --- BUSCAR AGENDAMENTOS ---
+$sql = "SELECT 
+            a.id_agendamento,
+            c.nome AS cliente,
+            b.nome AS barbeiro,
+            s.descricao AS servico,
+            s.preco,
+            s.duracao,
+            a.data,
+            a.hora,
+            a.status,
+            a.observacao
+        FROM Agendamento a
+        JOIN Cliente c ON a.id_cliente = c.id_cliente
+        JOIN Barbeiro b ON a.id_barbeiro = b.id_barbeiro
+        JOIN Servico s ON a.id_servico = s.id_servico
+        ORDER BY a.data DESC, a.hora DESC";
+$result = $conn->query($sql);
+?>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>📅 Lista de Agendamentos - Barber La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    td { vertical-align: middle; }
+    td.observacao {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: help;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="admin_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="mb-4">📅 Lista de Agendamentos</h2>
+
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
+
+  <?php if ($result->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark">
+        <tr class="text-center">
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Barbeiro</th>
+          <th>Serviço</th>
+          <th>Data</th>
+          <th>Hora</th>
+          <th>Observação</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php while ($row = $result->fetch_assoc()): ?>
+          <?php
+            $badge = match($row['status']) {
+              'pendente' => 'warning',
+              'confirmado' => 'primary',
+              'concluido' => 'success',
+              'cancelado' => 'danger',
+              default => 'secondary'
+            };
+          ?>
+          <tr class="text-center">
+            <td><?= $row['id_agendamento'] ?></td>
+            <td><?= htmlspecialchars($row['cliente']) ?></td>
+            <td><?= htmlspecialchars($row['barbeiro']) ?></td>
+            <td><?= htmlspecialchars($row['servico']) ?>  
+              <small class="text-muted d-block">
+                R$ <?= number_format($row['preco'], 2, ',', '.') ?> - <?= $row['duracao'] ?> min
+              </small>
+            </td>
+            <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
+            <td><?= date('H:i', strtotime($row['hora'])) ?></td>
+            <td class="observacao" title="<?= htmlspecialchars($row['observacao'] ?: 'Sem observação') ?>">
+              <?= htmlspecialchars($row['observacao'] ?: '-') ?>
+            </td>
+            <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
+            <td>
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_agendamento'] ?>">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <button class="btn btn-sm btn-danger remover-btn" 
+                      data-id="<?= $row['id_agendamento'] ?>"
+                      data-cliente="<?= htmlspecialchars($row['cliente']) ?>"
+                      data-servico="<?= htmlspecialchars($row['servico']) ?>"
+                      data-barbeiro="<?= htmlspecialchars($row['barbeiro']) ?>"
+                      data-data="<?= date('d/m/Y', strtotime($row['data'])) ?>"
+                      data-hora="<?= date('H:i', strtotime($row['hora'])) ?>">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Modal Editar -->
+          <div class="modal fade" id="editarModal<?= $row['id_agendamento'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Agendamento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="id_agendamento" value="<?= $row['id_agendamento'] ?>">
+                    <div class="mb-3">
+                      <label class="form-label">Data</label>
+                      <input type="date" name="data" class="form-control" value="<?= $row['data'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Hora</label>
+                      <input type="time" name="hora" class="form-control" value="<?= $row['hora'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Status</label>
+                      <select name="status" class="form-select">
+                        <option value="pendente" <?= $row['status']=="pendente"?"selected":"" ?>>Pendente</option>
+                        <option value="confirmado" <?= $row['status']=="confirmado"?"selected":"" ?>>Confirmado</option>
+                        <option value="concluido" <?= $row['status']=="concluido"?"selected":"" ?>>Concluído</option>
+                        <option value="cancelado" <?= $row['status']=="cancelado"?"selected":"" ?>>Cancelado</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="editar" class="btn btn-success">
+                      <i class="bi bi-check-circle"></i> Salvar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning mt-3">Nenhum agendamento encontrado.</div>
+  <?php endif; ?>
+
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
+</div>
+
+<!-- Modal genérico de confirmação -->
+<div class="modal fade" id="removerConfirmacaoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar Remoção</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="removerDetalhes"></div>
+        <div class="modal-footer">
+          <input type="hidden" name="id_agendamento" id="removerIdAgendamento">
+          <button type="submit" name="remover_confirmado" class="btn btn-danger">Sim, remover</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Tooltips
+document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
+
+// Modal dinâmico
+const removerModal = new bootstrap.Modal(document.getElementById('removerConfirmacaoModal'));
+document.querySelectorAll('.remover-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.id;
+    const cliente = btn.dataset.cliente;
+    const servico = btn.dataset.servico;
+    const barbeiro = btn.dataset.barbeiro;
+    const data = btn.dataset.data;
+    const hora = btn.dataset.hora;
+
+    document.getElementById('removerIdAgendamento').value = id;
+    document.getElementById('removerDetalhes').innerHTML = `
+      <p>Deseja realmente <strong>remover</strong> o agendamento?</p>
+      <p class="text-center">
+        👤 <strong>${cliente}</strong><br>
+        💇 ${servico}<br>
+        ✂️ ${barbeiro}<br>
+        📅 ${data} às ${hora}
+      </p>
+      <p class="text-muted text-center mb-0"><small>Esta ação não poderá ser desfeita.</small></p>
+    `;
+    removerModal.show();
+  });
+});
+</script>
+</body>
+</html>
+
+============================================================================
+listar_agendamentos.php
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_cliente.php");
+include("alerta.php");
+
+$id_cliente = $_SESSION['cliente_id'];
+$msg = null;
+
+// --- CANCELAR AGENDAMENTO ---
+if (isset($_POST['cancelar_confirmado'])) {
+    $id = intval($_POST['id_agendamento']);
+    if ($conn->query("UPDATE Agendamento SET status='cancelado' WHERE id_agendamento=$id AND id_cliente=$id_cliente")) {
+        $msg = ['success', '🗑️ Agendamento cancelado com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao cancelar o agendamento.'];
+    }
+}
+
+// --- BUSCAR AGENDAMENTOS DO CLIENTE ---
+$sql = "SELECT 
+            a.id_agendamento,
+            b.nome AS barbeiro,
+            s.descricao AS servico,
+            s.preco,
+            a.data,
+            a.hora,
+            a.status,
+            a.observacao
+        FROM Agendamento a
+        JOIN Barbeiro b ON a.id_barbeiro = b.id_barbeiro
+        JOIN Servico s ON a.id_servico = s.id_servico
+        WHERE a.id_cliente = $id_cliente
+        ORDER BY a.data DESC, a.hora DESC";
+$result = $conn->query($sql);
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>💈 Meus Agendamentos - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    td { vertical-align: middle; }
+    td.observacao {
+      max-width: 200px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: help;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="cliente_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">📅 Meus Agendamentos</h2>
+
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
+
+  <?php if ($result->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>Serviço</th>
+          <th>Barbeiro</th>
+          <th>Data</th>
+          <th>Hora</th>
+          <th>Status</th>
+          <th>Observação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <?php while ($row = $result->fetch_assoc()): ?>
+          <?php
+            $badge = match($row['status']) {
+              'pendente' => 'warning',
+              'confirmado' => 'primary',
+              'concluido' => 'success',
+              'cancelado' => 'danger',
+              default => 'secondary'
+            };
+          ?>
+          <tr>
+            <td><?= htmlspecialchars($row['servico']) ?>  
+              (R$ <?= number_format($row['preco'], 2, ',', '.') ?>)
+            </td>
+            <td><?= htmlspecialchars($row['barbeiro']) ?></td>
+            <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
+            <td><?= date('H:i', strtotime($row['hora'])) ?></td>
+            <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
+            <td class="observacao" title="<?= htmlspecialchars($row['observacao'] ?: 'Sem observação') ?>">
+              <?= htmlspecialchars($row['observacao'] ?: '-') ?>
+            </td>
+            <td>
+              <?php if (in_array($row['status'], ['pendente','confirmado'])): ?>
+                <button class="btn btn-sm btn-danger cancelar-btn"
+                        data-id="<?= $row['id_agendamento'] ?>"
+                        data-servico="<?= htmlspecialchars($row['servico']) ?>"
+                        data-barbeiro="<?= htmlspecialchars($row['barbeiro']) ?>"
+                        data-data="<?= date('d/m/Y', strtotime($row['data'])) ?>"
+                        data-hora="<?= date('H:i', strtotime($row['hora'])) ?>">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              <?php else: ?>
+                <button class="btn btn-sm btn-secondary" disabled>
+                  <i class="bi bi-dash-circle"></i>
+                </button>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning text-center mt-3">Nenhum agendamento encontrado.</div>
+  <?php endif; ?>
+
+  <a href="cliente_dashboard.php" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
+</div>
+
+<!-- Modal moderno de confirmação -->
+<div class="modal fade" id="confirmarCancelamentoModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar Cancelamento</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="cancelamentoDetalhes"></div>
+        <div class="modal-footer">
+          <input type="hidden" name="id_agendamento" id="cancelarIdAgendamento">
+          <button type="submit" name="cancelar_confirmado" class="btn btn-danger">
+            <i class="bi bi-check-circle"></i> Sim, cancelar
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
+
+const modal = new bootstrap.Modal(document.getElementById('confirmarCancelamentoModal'));
+document.querySelectorAll('.cancelar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const id = btn.dataset.id;
+    const servico = btn.dataset.servico;
+    const barbeiro = btn.dataset.barbeiro;
+    const data = btn.dataset.data;
+    const hora = btn.dataset.hora;
+
+    document.getElementById('cancelarIdAgendamento').value = id;
+    document.getElementById('cancelamentoDetalhes').innerHTML = `
+      <p class="mb-2 text-center">Deseja realmente <strong>cancelar</strong> o agendamento abaixo?</p>
+      <p class="text-center">
+        💈 <strong>${servico}</strong><br>
+        ✂️ com <strong>${barbeiro}</strong><br>
+        📅 ${data} às ${hora}
+      </p>
+      <p class="text-muted text-center"><small>Esta ação não poderá ser desfeita.</small></p>
+    `;
+    modal.show();
+  });
+});
+</script>
+</body>
+</html>
+
+===========================================================================
+listar_clientes.php
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+include("alerta.php");
+
+// --- REMOVER CLIENTE ---
+if (isset($_GET['remover'])) {
+    $id = intval($_GET['remover']);
+    $conn->query("DELETE FROM Agendamento WHERE id_cliente = $id");
+    if ($conn->query("DELETE FROM Cliente WHERE id_cliente = $id")) {
+        header("Location: listar_clientes.php?msg=ok_remove");
+        exit;
+    } else {
+        header("Location: listar_clientes.php?msg=erro_remove");
+        exit;
+    }
+}
+
+// --- EDITAR CLIENTE ---
+if (isset($_POST['editar'])) {
+    $id = intval($_POST['id_cliente']);
+    $nome = trim($_POST['nome']);
+    $telefone = trim($_POST['telefone']);
+    $email = trim($_POST['email']);
+
+    $sql = "UPDATE Cliente SET nome='$nome', telefone='$telefone', email='$email' WHERE id_cliente=$id";
+    if ($conn->query($sql)) {
+        header("Location: listar_clientes.php?msg=ok_edit");
+        exit;
+    } else {
+        header("Location: listar_clientes.php?msg=erro_edit");
+        exit;
+    }
+}
+
+$result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerenciar Clientes - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="admin_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">👥 Gerenciar Clientes</h2>
+
+  <!-- ALERTAS PADRONIZADOS -->
+  <?php if (isset($_GET['msg'])): ?>
+    <div class="alert alert-dismissible fade show mt-3 
+      <?= str_contains($_GET['msg'], 'erro') ? 'alert-danger' : 'alert-success' ?>" role="alert">
+      <?php
+        switch ($_GET['msg']) {
+          case 'ok_edit':
+            echo "✏️ Alterações salvas com sucesso!";
+            break;
+          case 'ok_remove':
+            echo "🗑️ Cliente removido com sucesso!";
+            break;
+          case 'erro_edit':
+            echo "❌ Erro ao atualizar cliente.";
+            break;
+          case 'erro_remove':
+            echo "❌ Erro ao remover cliente.";
+            break;
+          case 'senha_ok':
+            echo "
+            <div class='text-center'>
+              <h5 class='fw-bold text-success'><i class='bi bi-unlock-fill'></i> Senha redefinida com sucesso!</h5>
+              <p class='mb-0'>A nova senha padrão é:
+                <span class='badge bg-dark text-white px-2 py-1'>1234</span>
+              </p>
+              <small class='text-muted'>Peça ao cliente para alterá-la após o próximo login.</small>
+            </div>";
+            break;
+          case 'senha_erro':
+            echo "❌ Erro ao redefinir senha.";
+            break;
+        }
+      ?>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  <?php endif; ?>
+
+  <?php if ($result->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Telefone</th>
+          <th>Email</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <?php while ($row = $result->fetch_assoc()): ?>
+          <tr>
+            <td><?= $row['id_cliente'] ?></td>
+            <td><?= htmlspecialchars($row['nome']) ?></td>
+            <td><?= $row['telefone'] ?></td>
+            <td><?= $row['email'] ?></td>
+            <td>
+              <!-- Botão Editar -->
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_cliente'] ?>">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <!-- Botão Redefinir Senha -->
+              <a href="redefinir_senha.php?id=<?= $row['id_cliente'] ?>" class="btn btn-sm btn-secondary">
+                <i class="bi bi-key"></i>
+              </a>
+
+              <!-- Botão Remover -->
+              <a href="?remover=<?= $row['id_cliente'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Remover este cliente?')">
+                <i class="bi bi-trash"></i>
+              </a>
+            </td>
+          </tr>
+
+          <!-- Modal Editar -->
+          <div class="modal fade" id="editarModal<?= $row['id_cliente'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Cliente</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="id_cliente" value="<?= $row['id_cliente'] ?>">
+                    <div class="mb-3">
+                      <label class="form-label">Nome</label>
+                      <input type="text" name="nome" class="form-control" value="<?= htmlspecialchars($row['nome']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Telefone</label>
+                      <input type="text" name="telefone" class="form-control" value="<?= $row['telefone'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Email</label>
+                      <input type="email" name="email" class="form-control" value="<?= $row['email'] ?>">
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="editar" class="btn btn-success">
+                      <i class="bi bi-check-circle"></i> Salvar
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning text-center mt-3">Nenhum cliente cadastrado.</div>
+  <?php endif; ?>
+
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+==================================================================================================
+listar_servicos.php
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+include("alerta.php");
+
+$msg = null;
+
+// --- ADICIONAR SERVIÇO ---
+if (isset($_POST['adicionar'])) {
+    $descricao = trim($_POST['descricao']);
+    $preco = floatval($_POST['preco']);
+    $duracao = intval($_POST['duracao']);
+
+    if ($conn->query("INSERT INTO Servico (descricao, preco, duracao) VALUES ('$descricao','$preco','$duracao')")) {
+        $msg = ['success', '✅ Serviço adicionado com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao adicionar serviço.'];
+    }
+}
+
+// --- EDITAR SERVIÇO ---
+if (isset($_POST['editar'])) {
+    $id = intval($_POST['id_servico']);
+    $descricao = trim($_POST['descricao']);
+    $preco = floatval($_POST['preco']);
+    $duracao = intval($_POST['duracao']);
+
+    if ($conn->query("UPDATE Servico SET descricao='$descricao', preco='$preco', duracao='$duracao' WHERE id_servico=$id")) {
+        $msg = ['success', '✏️ Alterações salvas com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao atualizar serviço.'];
+    }
+}
+
+// --- REMOVER SERVIÇO ---
+if (isset($_POST['remover_confirmado'])) {
+    $id = intval($_POST['id_servico']);
+    if ($conn->query("DELETE FROM Servico WHERE id_servico = $id")) {
+        $msg = ['success', '🗑️ Serviço removido com sucesso!'];
+    } else {
+        $msg = ['danger', '❌ Erro ao remover serviço.'];
+    }
+}
+
+$result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>✂️ Gerenciar Serviços - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="admin_dashboard.php">💈 Barber La Mafia</a>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2 class="text-center mb-4">✂️ Gerenciar Serviços</h2>
+
+  <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
+
+  <!-- Formulário de novo serviço -->
+  <div class="card shadow-sm p-3 mb-4">
+    <h5><i class="bi bi-plus-circle"></i> Adicionar Novo Serviço</h5>
+    <form method="POST" class="row g-3">
+      <div class="col-md-4">
+        <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
+      </div>
+      <div class="col-md-3">
+        <input type="number" step="0.01" name="preco" class="form-control" placeholder="Preço (R$)" required>
+      </div>
+      <div class="col-md-3">
+        <input type="number" name="duracao" class="form-control" placeholder="Duração (min)" required>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" name="adicionar" class="btn btn-success w-100">
+          <i class="bi bi-check-circle"></i> Adicionar
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Tabela de serviços -->
+  <?php if ($result->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm align-middle">
+      <thead class="table-dark text-center">
+        <tr>
+          <th>ID</th>
+          <th>Descrição</th>
+          <th>Preço</th>
+          <th>Duração</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <?php while ($row = $result->fetch_assoc()): ?>
+          <tr>
+            <td><?= $row['id_servico'] ?></td>
+            <td><?= htmlspecialchars($row['descricao']) ?></td>
+            <td>R$ <?= number_format($row['preco'], 2, ',', '.') ?></td>
+            <td><?= $row['duracao'] ?> min</td>
+            <td>
+              <!-- Botão editar -->
+              <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editarModal<?= $row['id_servico'] ?>">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <!-- Botão remover -->
+              <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#removerModal<?= $row['id_servico'] ?>">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+          </tr>
+
+          <!-- Modal Editar -->
+          <div class="modal fade" id="editarModal<?= $row['id_servico'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="bi bi-pencil"></i> Editar Serviço</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <input type="hidden" name="id_servico" value="<?= $row['id_servico'] ?>">
+                    <div class="mb-3">
+                      <label class="form-label">Descrição</label>
+                      <input type="text" name="descricao" class="form-control" value="<?= htmlspecialchars($row['descricao']) ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Preço (R$)</label>
+                      <input type="number" step="0.01" name="preco" class="form-control" value="<?= $row['preco'] ?>" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Duração (min)</label>
+                      <input type="number" name="duracao" class="form-control" value="<?= $row['duracao'] ?>" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="editar" class="btn btn-success"><i class="bi bi-check-circle"></i> Salvar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal de confirmação de exclusão -->
+          <div class="modal fade" id="removerModal<?= $row['id_servico'] ?>" tabindex="-1">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST">
+                  <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar exclusão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    Deseja realmente remover o serviço <strong><?= htmlspecialchars($row['descricao']) ?></strong>?
+                    <input type="hidden" name="id_servico" value="<?= $row['id_servico'] ?>">
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" name="remover_confirmado" class="btn btn-danger">Sim, remover</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning text-center mt-3">Nenhum serviço cadastrado.</div>
+  <?php endif; ?>
+
+  <a href="admin_dashboard.php" class="btn btn-secondary mt-3">
+    <i class="bi bi-arrow-left-circle"></i> Voltar ao Painel
+  </a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+================================================================================================
+login.php
+
+<?php
+session_start();
+include("conexao.php");
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'];
+    $senha = $_POST['senha'];
+
+    // Verifica se é admin
+    $sql_admin = "SELECT * FROM Admin WHERE email = ?";
+    $stmt = $conn->prepare($sql_admin);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $res_admin = $stmt->get_result();
+
+    if ($res_admin->num_rows > 0) {
+        $admin = $res_admin->fetch_assoc();
+        if (password_verify($senha, $admin['senha'])) {
+            $_SESSION['admin_id'] = $admin['id_admin'];
+            $_SESSION['admin_nome'] = $admin['nome'];
+            $_SESSION['tipo'] = "admin";
+            header("Location: admin_dashboard.php");
+            exit;
+        }
+    }
+
+    // Verifica se é cliente
+    $sql_cliente = "SELECT * FROM Cliente WHERE email = ?";
+    $stmt = $conn->prepare($sql_cliente);
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $res_cliente = $stmt->get_result();
+
+    if ($res_cliente->num_rows > 0) {
+        $cliente = $res_cliente->fetch_assoc();
+        if (password_verify($senha, $cliente['senha'])) {
+            $_SESSION['cliente_id'] = $cliente['id_cliente'];
+            $_SESSION['cliente_nome'] = $cliente['nome'];
+            $_SESSION['tipo'] = "cliente";
+            header("Location: cliente_dashboard.php");
+            exit;
+        }
+    }
+
+    // Se não encontrou ou senha errada
+    $erro = "❌ E-mail ou senha inválidos.";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-4">
+      <div class="card shadow-sm p-4">
+        <h3 class="text-center mb-3">🔑 Login</h3>
+
+        <?php if (isset($erro)): ?>
+          <div class="alert alert-danger"><?= $erro ?></div>
+        <?php endif; ?>
+
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">E-mail</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Senha</label>
+            <input type="password" name="senha" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Entrar</button>
+        </form>
+
+        <!-- Botão de cadastro -->
+        <div class="text-center mt-3">
+          <p>Não tem cadastro? <a href="cadastro_cliente.php">Clique aqui</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+========================================================================================
+logout.php
+
+<?php
+session_start();
+
+// Limpa todas as variáveis de sessão
+$_SESSION = [];
+
+// Destroi a sessão completamente
+session_destroy();
+
+// Redireciona para a tela de login
+header("Location: login.php");
+exit;
+?>
+
+========================================================================================
+meus_agendamentos.php
+
+<?php
+include("conexao.php");
+include("verifica_cliente.php");
+
+$id_cliente = $_SESSION['cliente_id'];
+
+// Cancelar agendamento (se o cliente pedir)
+if (isset($_GET['cancelar'])) {
+    $id = intval($_GET['cancelar']);
+    $conn->query("UPDATE Agendamento SET status='cancelado' WHERE id_agendamento=$id AND id_cliente=$id_cliente");
+    $msg = "❌ Agendamento cancelado!";
+}
+
+// Buscar agendamentos do cliente logado (com observação)
+$sql = "SELECT 
+            a.id_agendamento, 
+            s.descricao AS servico, 
+            s.duracao, 
+            a.data, 
+            a.hora, 
+            a.status,
+            a.observacao
+        FROM Agendamento a
+        JOIN Servico s ON a.id_servico = s.id_servico
+        WHERE a.id_cliente = $id_cliente
+        ORDER BY a.data DESC, a.hora DESC";
+$result = $conn->query($sql);
+?>
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>📅 Meus Agendamentos - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    td {
+      vertical-align: middle;
+    }
+    td.observacao {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: help;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="cliente_dashboard.php">💈 Barber La Mafia</a>
+    <span class="navbar-text text-white">Bem-vindo, <?= $_SESSION['cliente_nome'] ?></span>
+    <a href="logout.php" class="btn btn-outline-light">Sair</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <h2>📅 Meus Agendamentos</h2>
+
+  <?php if (isset($msg)): ?>
+    <div class="alert alert-info"><?= $msg ?></div>
+  <?php endif; ?>
+
+  <?php if ($result->num_rows > 0): ?>
+    <table class="table table-bordered table-hover shadow-sm mt-3 align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Serviço</th>
+          <th>Data</th>
+          <th>Hora</th>
+          <th>Observação</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php while ($row = $result->fetch_assoc()): ?>
+          <?php
+            $badge = match($row['status']) {
+              'pendente' => 'warning',
+              'confirmado' => 'primary',
+              'concluido' => 'success',
+              'cancelado' => 'danger',
+              default => 'secondary'
+            };
+          ?>
+          <tr>
+            <td><?= $row['id_agendamento'] ?></td>
+            <td><?= htmlspecialchars($row['servico']) ?> (<?= $row['duracao'] ?> min)</td>
+            <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
+            <td><?= date('H:i', strtotime($row['hora'])) ?></td>
+            <td class="observacao" title="<?= htmlspecialchars($row['observacao'] ?: 'Sem observação') ?>">
+              <?= htmlspecialchars($row['observacao'] ?: '-') ?>
+            </td>
+            <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
+            <td class="text-center">
+              <?php if (!in_array($row['status'], ["cancelado", "concluido"])): ?>
+                <a href="?cancelar=<?= $row['id_agendamento'] ?>" class="btn btn-sm btn-danger"
+                    onclick="return confirm('Deseja realmente cancelar este agendamento?')">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </a>
+              <?php else: ?>
+                <span class="text-muted">-</span>
+              <?php endif; ?>
+            </td>
+          </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
+  <?php else: ?>
+    <div class="alert alert-warning mt-3">Você ainda não possui nenhum agendamento.</div>
+  <?php endif; ?>
+
+  <a href="cliente_dashboard.php" class="btn btn-secondary mt-3">Voltar</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Ativa os tooltips do Bootstrap (para mostrar a observação completa ao passar o mouse)
+  const tooltipTriggerList = document.querySelectorAll('[title]');
+  tooltipTriggerList.forEach(el => new bootstrap.Tooltip(el));
+</script>
+</body>
+</html>
+==============================================================================================
+
+redefinir_senha.php 
+
+<?php
+session_start();
+include("conexao.php");
+include("verifica_adm.php");
+
+// Verifica se o ID foi informado
+if (!isset($_GET['id'])) {
+    header("Location: listar_clientes.php?msg=senha_erro");
+    exit;
+}
+
+$id = intval($_GET['id']);
+$novaSenha = password_hash("1234", PASSWORD_DEFAULT);
+
+$sql = "UPDATE Cliente SET senha='$novaSenha' WHERE id_cliente=$id";
+
+if ($conn->query($sql)) {
+    header("Location: listar_clientes.php?msg=senha_ok");
+    exit;
+} else {
+    header("Location: listar_clientes.php?msg=senha_erro");
+    exit;
+}
+?>
+==================================================================================
+registrar.php
+
+<?php
+include("conexao.php");
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $nome = $_POST['nome'];
+    $telefone = $_POST['telefone'];
+    $email = $_POST['email'];
+    $senha = $_POST['senha'];
+
+    // Criptografa a senha
+    $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO Cliente (nome, telefone, email, senha)
+            VALUES ('$nome', '$telefone', '$email', '$senhaHash')";
+
+    if ($conn->query($sql) === TRUE) {
+        $msg = "✅ Registro feito com sucesso! Agora você já pode fazer login.";
+    } else {
+        $msg = "❌ Erro ao registrar: " . $conn->error;
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Registrar - Barbearia La Mafia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="text-center">Criar Conta</h3>
+          <?php if (isset($msg)) echo "<div class='alert alert-info'>$msg</div>"; ?>
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">Nome</label>
+              <input type="text" name="nome" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Telefone</label>
+              <input type="text" name="telefone" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Senha</label>
+              <input type="password" name="senha" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Registrar</button>
+          </form>
+          <div class="text-center mt-3">
+            Já tem conta? <a href="login.php">Fazer Login</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+==========================================================================
+verifica_adm.php
+
+<?php
+/**
+ * 🔒 Controle de acesso do administrador (Barber La Mafia)
+ * Compatível com páginas que já iniciaram sessão.
+ */
+
+// Inicia sessão apenas se ainda não existir
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', 36000); // Sessão dura até 10 horas
+    session_set_cookie_params(36000);
+    session_start();
+}
+
+// Verifica se o admin está autenticado
+if (!isset($_SESSION['admin_id']) || ($_SESSION['tipo'] ?? '') !== 'admin') {
+    header("Location: login.php");
+    exit;
+}
+?>
+
+====================================================================
+verifica_cliente.php
+
+<?php
+/**
+ * 🔒 Controle de acesso do CLIENTE (Barber La Mafia)
+ * Impede que páginas do cliente sejam acessadas sem login.
+ */
+
+// Inicia sessão apenas se ainda não existir
+if (session_status() === PHP_SESSION_NONE) {
+    ini_set('session.gc_maxlifetime', 36000); // Sessão dura até 10 horas
+    session_set_cookie_params(36000);
+    session_start();
+}
+
+// Verifica se o cliente está autenticado
+if (!isset($_SESSION['cliente_id']) || ($_SESSION['tipo'] ?? '') !== 'cliente') {
+    header("Location: login.php");
+    exit;
+}
+?>
+
+	

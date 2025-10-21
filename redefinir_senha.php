@@ -1,35 +1,24 @@
 <?php
-include("conexao.php");
 session_start();
+include("conexao.php");
+include("verifica_adm.php");
 
-// Verifica se é admin
-if (!isset($_SESSION['admin_id']) || $_SESSION['tipo'] != "admin") {
-    header("Location: login.php");
+// Verifica se o ID foi informado
+if (!isset($_GET['id'])) {
+    header("Location: listar_clientes.php?msg=senha_erro");
     exit;
 }
 
-// Verifica se recebeu o ID do cliente
-if (isset($_GET['id'])) {
-    $id_cliente = intval($_GET['id']);
+$id = intval($_GET['id']);
+$novaSenha = password_hash("1234", PASSWORD_DEFAULT);
 
-    // Nova senha padrão
-    $nova_senha = "1234";
-    $hash = password_hash($nova_senha, PASSWORD_DEFAULT);
+$sql = "UPDATE Cliente SET senha='$novaSenha' WHERE id_cliente=$id";
 
-    // Atualiza no banco
-    $sql = "UPDATE Cliente SET senha = ? WHERE id_cliente = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $hash, $id_cliente);
-
-    if ($stmt->execute()) {
-        header("Location: listar_clientes.php?msg=senha_ok");
-        exit;
-    } else {
-        header("Location: listar_clientes.php?msg=senha_erro");
-        exit;
-    }
+if ($conn->query($sql)) {
+    header("Location: listar_clientes.php?msg=senha_ok");
+    exit;
 } else {
-    header("Location: listar_clientes.php");
+    header("Location: listar_clientes.php?msg=senha_erro");
     exit;
 }
 ?>
