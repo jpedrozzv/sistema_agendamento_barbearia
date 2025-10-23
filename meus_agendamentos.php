@@ -1,25 +1,21 @@
 <?php
-session_start();
 include("conexao.php");
 include("verifica_cliente.php");
 include("alerta.php");
+include("header_cliente.php");
 
-$id_cliente = $_SESSION['cliente_id'];
-$msg = null;
-
-// --- CANCELAR AGENDAMENTO (POST via modal) ---
-if (isset($_POST['cancelar_confirmado'])) {
-    $id = intval($_POST['id_agendamento']);
-    if ($conn->query("UPDATE Agendamento 
-                      SET status='cancelado' 
-                      WHERE id_agendamento=$id AND id_cliente=$id_cliente")) {
-        $msg = ['success', '🗑️ Agendamento cancelado com sucesso!'];
+// --- CANCELAR AGENDAMENTO ---
+if (isset($_POST['__action']) && $_POST['__action'] === 'cancelar_agendamento') {
+    $id = intval($_POST['__id']);
+    if ($conn->query("UPDATE Agendamento SET status='cancelado' WHERE id_agendamento=$id AND id_cliente=".$_SESSION['cliente_id'])) {
+        mostrarAlerta('success', '🗑️ Agendamento cancelado com sucesso!');
     } else {
-        $msg = ['danger', '❌ Erro ao cancelar o agendamento.'];
+        mostrarAlerta('danger', '❌ Erro ao cancelar o agendamento.');
     }
 }
 
 // --- BUSCAR AGENDAMENTOS DO CLIENTE ---
+$id_cliente = $_SESSION['cliente_id'];
 $sql = "SELECT 
             a.id_agendamento,
             b.nome AS barbeiro,
@@ -36,37 +32,11 @@ $sql = "SELECT
         ORDER BY a.data DESC, a.hora DESC";
 $result = $conn->query($sql);
 ?>
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <title>💈 Meus Agendamentos - Barbearia La Mafia</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    td { vertical-align: middle; }
-    td.observacao {
-      max-width: 220px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      cursor: help;
-    }
-  </style>
-</head>
-<body class="bg-light">
-
-<nav class="navbar navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="cliente_dashboard.php">💈 Barber La Mafia</a>
-    <a href="logout.php" class="btn btn-outline-light">Sair</a>
-  </div>
-</nav>
 
 <div class="container mt-4">
   <h2 class="text-center mb-4">📅 Meus Agendamentos</h2>
 
-  <?php if ($msg) { mostrarAlerta($msg[0], $msg[1]); } ?>
+  <?php if (isset($_SESSION['alerta'])) { echo $_SESSION['alerta']; unset($_SESSION['alerta']); } ?>
 
   <?php if ($result->num_rows > 0): ?>
     <table class="table table-bordered table-hover shadow-sm align-middle">
@@ -85,15 +55,17 @@ $result = $conn->query($sql);
         <?php while ($row = $result->fetch_assoc()): ?>
           <?php
             $badge = match($row['status']) {
-              'pendente'   => 'warning',
+              'pendente' => 'warning',
               'confirmado' => 'primary',
-              'concluido'  => 'success',
-              'cancelado'  => 'danger',
-              default      => 'secondary'
+              'concluido' => 'success',
+              'cancelado' => 'danger',
+              default => 'secondary'
             };
           ?>
           <tr>
-            <td><?= htmlspecialchars($row['servico']) ?> (R$ <?= number_format($row['preco'], 2, ',', '.') ?>)</td>
+            <td><?= htmlspecialchars($row['servico']) ?><br>
+              <small>R$ <?= number_format($row['preco'], 2, ',', '.') ?></small>
+            </td>
             <td><?= htmlspecialchars($row['barbeiro']) ?></td>
             <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
             <td><?= date('H:i', strtotime($row['hora'])) ?></td>
@@ -102,20 +74,24 @@ $result = $conn->query($sql);
               <?= htmlspecialchars($row['observacao'] ?: '-') ?>
             </td>
             <td>
-              <?php if ($row['status'] === 'pendente' || $row['status'] === 'confirmado'): ?>
-                <button 
-                  class="btn btn-sm btn-danger cancelar-btn"
+              <?php if (in_array($row['status'], ['pendente','confirmado'])): ?>
+                <form id="formCancelar<?= $row['id_agendamento'] ?>" method="POST" class="d-inline">
+                  <input type="hidden" name="__action" value="cancelar_agendamento">
+                  <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">
+                </form>
+                <button
+                  class="btn btn-sm btn-danger"
+                  data-confirm="cancelar_agendamento"
                   data-id="<?= $row['id_agendamento'] ?>"
-                  data-servico="<?= htmlspecialchars($row['servico']) ?>"
-                  data-barbeiro="<?= htmlspecialchars($row['barbeiro']) ?>"
-                  data-data="<?= date('d/m/Y', strtotime($row['data'])) ?>"
-                  data-hora="<?= date('H:i', strtotime($row['hora'])) ?>">
+                  data-text="Deseja realmente <strong>cancelar</strong> o agendamento de
+                             <strong><?= htmlspecialchars($row['servico']) ?></strong> com
+                             <strong><?= htmlspecialchars($row['barbeiro']) ?></strong> em
+                             <strong><?= date('d/m/Y', strtotime($row['data'])) ?></strong> às
+                             <strong><?= date('H:i', strtotime($row['hora'])) ?></strong>?">
                   <i class="bi bi-x-circle"></i>
                 </button>
               <?php else: ?>
-                <button class="btn btn-sm btn-secondary" disabled>
-                  <i class="bi bi-dash-circle"></i>
-                </button>
+                <button class="btn btn-sm btn-secondary" disabled><i class="bi bi-dash-circle"></i></button>
               <?php endif; ?>
             </td>
           </tr>
@@ -123,7 +99,7 @@ $result = $conn->query($sql);
       </tbody>
     </table>
   <?php else: ?>
-    <div class="alert alert-warning text-center mt-3">Nenhum agendamento encontrado.</div>
+    <div class="alert alert-warning text-center">Nenhum agendamento encontrado.</div>
   <?php endif; ?>
 
   <a href="cliente_dashboard.php" class="btn btn-secondary mt-3">
@@ -131,54 +107,49 @@ $result = $conn->query($sql);
   </a>
 </div>
 
-<!-- Modal de confirmação -->
-<div class="modal fade" id="confirmarCancelamentoModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST">
-        <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar Cancelamento</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body" id="cancelamentoDetalhes"><!-- preenchido via JS --></div>
-        <div class="modal-footer">
-          <input type="hidden" name="id_agendamento" id="cancelarIdAgendamento">
-          <button type="submit" name="cancelar_confirmado" class="btn btn-danger">Sim, cancelar</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Voltar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+<?php include("footer.php"); ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Tooltips para observações
+// Tooltip
 document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 
-// Modal dinâmico para cancelar (sem confirm() do navegador)
-const modal = new bootstrap.Modal(document.getElementById('confirmarCancelamentoModal'));
-document.querySelectorAll('.cancelar-btn').forEach(btn => {
+// Modal de confirmação
+document.querySelectorAll('[data-confirm]').forEach(btn => {
   btn.addEventListener('click', () => {
     const id = btn.dataset.id;
-    const servico = btn.dataset.servico;
-    const barbeiro = btn.dataset.barbeiro;
-    const data = btn.dataset.data;
-    const hora = btn.dataset.hora;
+    const text = btn.dataset.text;
 
-    document.getElementById('cancelarIdAgendamento').value = id;
-    document.getElementById('cancelamentoDetalhes').innerHTML = `
-      <p>Deseja realmente <strong>cancelar</strong> o agendamento de:</p>
-      <p class="text-center">
-        💇 <strong>${servico}</strong><br>
-        ✂️ com <strong>${barbeiro}</strong><br>
-        📅 <strong>${data}</strong> às <strong>${hora}</strong>
-      </p>
-      <p class="text-muted text-center mb-0"><small>Esta ação não poderá ser desfeita.</small></p>
+    const modalHTML = `
+      <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+              <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar cancelamento</h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+              <p>${text}</p>
+              <p class="text-muted"><small>Esta ação não poderá ser desfeita.</small></p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+              <button class="btn btn-danger" id="confirmYes">Sim, cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
     `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
     modal.show();
+
+    document.getElementById('confirmYes').addEventListener('click', () => {
+      document.getElementById(`formCancelar${id}`).submit();
+      modal.hide();
+    });
+
+    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', e => e.target.remove());
   });
 });
 </script>
-</body>
-</html>
