@@ -2,21 +2,27 @@
 include("conexao.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nome = $_POST['nome'];
-    $telefone = $_POST['telefone'];
-    $email = $_POST['email'];
-    $senha = $_POST['senha'];
+    $nome = trim($_POST['nome'] ?? '');
+    $telefone = preg_replace('/\D+/', '', $_POST['telefone'] ?? '');
+    $email = strtolower(trim($_POST['email'] ?? ''));
+    $senha = $_POST['senha'] ?? '';
 
-    // Criptografa a senha
-    $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
-
-    $sql = "INSERT INTO Cliente (nome, telefone, email, senha)
-            VALUES ('$nome', '$telefone', '$email', '$senhaHash')";
-
-    if ($conn->query($sql) === TRUE) {
-        $msg = "✅ Registro feito com sucesso! Agora você já pode fazer login.";
+    if ($nome === '' || $telefone === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($senha) < 4) {
+        $msg = "❌ Dados inválidos. Verifique as informações e tente novamente.";
     } else {
-        $msg = "❌ Erro ao registrar: " . $conn->error;
+        try {
+            $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+
+            $stmt = $conn->prepare('INSERT INTO Cliente (nome, telefone, email, senha) VALUES (?, ?, ?, ?)');
+            $stmt->bind_param('ssss', $nome, $telefone, $email, $senhaHash);
+            $stmt->execute();
+            $stmt->close();
+
+            $msg = "✅ Registro feito com sucesso! Agora você já pode fazer login.";
+        } catch (Throwable $exception) {
+            error_log('Erro ao registrar cliente: ' . $exception->getMessage());
+            $msg = "❌ Erro ao registrar. Tente novamente mais tarde.";
+        }
     }
 }
 ?>

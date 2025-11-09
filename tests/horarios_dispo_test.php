@@ -1,29 +1,97 @@
 <?php
 declare(strict_types=1);
 
-define('HORARIOS_DISPO_TEST_MODE', true);
+require_once __DIR__ . '/../src/horarios.php';
 
-require_once __DIR__ . '/../horarios_dispo.php';
+define('HORARIOS_DISPO_TEST_MODE', true);
 
 class FakeResult
 {
     private array $rows;
     private int $index = 0;
-    public int $num_rows;
 
     public function __construct(array $rows)
     {
         $this->rows = array_values($rows);
-        $this->num_rows = count($rows);
     }
 
     public function fetch_assoc(): ?array
     {
-        if ($this->index >= $this->num_rows) {
+        if ($this->index >= count($this->rows)) {
             return null;
         }
 
         return $this->rows[$this->index++];
+    }
+}
+
+class FakeStatement
+{
+    private string $sql;
+    private array $fixtures;
+    private array $boundRefs = [];
+    private array $boundValues = [];
+
+    public function __construct(string $sql, array $fixtures)
+    {
+        $this->sql = $sql;
+        $this->fixtures = $fixtures;
+    }
+
+    public function bind_param(string $types, &...$vars): void
+    {
+        $this->boundRefs = &$vars;
+    }
+
+    public function execute(): bool
+    {
+        $this->boundValues = array_map(static fn (&$value) => $value, $this->boundRefs);
+        return true;
+    }
+
+    public function get_result(): FakeResult
+    {
+        if (stripos($this->sql, 'from feriado') !== false) {
+            $data = $this->boundValues[0] ?? null;
+            $feriados = $this->fixtures['feriados'] ?? [];
+
+            if ($data !== null && isset($feriados[$data])) {
+                return new FakeResult([
+                    ['descricao' => $feriados[$data]],
+                ]);
+            }
+
+            return new FakeResult([]);
+        }
+
+        if (stripos($this->sql, 'from agendamento') !== false) {
+            $idBarbeiro = (int) ($this->boundValues[0] ?? 0);
+            $data = $this->boundValues[1] ?? null;
+
+            $registros = [];
+            foreach ($this->fixtures['agendamentos'] ?? [] as $agendamento) {
+                if ((int) ($agendamento['id_barbeiro'] ?? 0) !== $idBarbeiro) {
+                    continue;
+                }
+
+                if (($agendamento['data'] ?? null) !== $data) {
+                    continue;
+                }
+
+                $registros[] = [
+                    'hora' => $agendamento['hora'],
+                    'duracao' => $agendamento['duracao'],
+                ];
+            }
+
+            return new FakeResult($registros);
+        }
+
+        return new FakeResult([]);
+    }
+
+    public function close(): void
+    {
     }
 }
 
@@ -36,17 +104,9 @@ class FakeMysqli
         $this->fixtures = $fixtures;
     }
 
-    public function query(string $sql): FakeResult
+    public function prepare(string $sql): FakeStatement
     {
-        if (stripos($sql, 'from feriado') !== false) {
-            return new FakeResult($this->fixtures['feriados'] ?? []);
-        }
-
-        if (stripos($sql, 'from agendamento') !== false) {
-            return new FakeResult($this->fixtures['agendamentos'] ?? []);
-        }
-
-        throw new RuntimeException('Consulta inesperada: ' . $sql);
+        return new FakeStatement($sql, $this->fixtures);
     }
 }
 
@@ -74,8 +134,9 @@ $tests['horarios_disponiveis_com_agendamentos'] = function (): void {
     $fixtures = [
         'feriados' => [],
         'agendamentos' => [
-            ['hora' => '10:00', 'duracao' => 60],
-            ['hora' => '13:30', 'duracao' => 30],
+            ['id_barbeiro' => 1, 'data' => '2024-06-15', 'hora' => '10:00', 'duracao' => 60],
+            ['id_barbeiro' => 1, 'data' => '2024-06-15', 'hora' => '13:30', 'duracao' => 30],
+            ['id_barbeiro' => 2, 'data' => '2024-06-15', 'hora' => '09:00', 'duracao' => 30],
         ],
     ];
 
@@ -95,7 +156,7 @@ $tests['horarios_disponiveis_com_agendamentos'] = function (): void {
 $tests['data_em_feriado'] = function (): void {
     $fixtures = [
         'feriados' => [
-            ['descricao' => 'Natal'],
+            '2024-12-25' => 'Natal',
         ],
         'agendamentos' => [],
     ];
@@ -122,6 +183,19 @@ $tests['data_em_domingo'] = function (): void {
     assertEquals(true, $response['vazio']);
     assertArrayHasKey('erro', $response);
     assertEquals(HORARIOS_DISPO_DOMINGO_MSG, $response['erro']);
+};
+
+$tests['data_invalida'] = function (): void {
+    $fixtures = [
+        'feriados' => [],
+        'agendamentos' => [],
+    ];
+
+    $conn = new FakeMysqli($fixtures);
+    $response = horarios_dispo_calcular($conn, 3, '2024-02-30');
+
+    assertArrayHasKey('erro', $response);
+    assertEquals('Data inválida.', $response['erro']);
 };
 
 $tests['json_estrutura_padrao'] = function (): void {

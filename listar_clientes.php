@@ -3,29 +3,70 @@
 <?php
 // --- REMOVER CLIENTE ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'remover_cliente') {
-    $id = intval($_POST['__id']);
-    $conn->query("DELETE FROM Agendamento WHERE id_cliente = $id");
-    if ($conn->query("DELETE FROM Cliente WHERE id_cliente = $id")) {
-        mostrarAlerta('success', '🗑️ Cliente removido com sucesso!');
+    $id = intval($_POST['__id'] ?? 0);
+
+    if ($id <= 0) {
+        mostrarAlerta('danger', '❌ Cliente inválido informado.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao remover cliente.');
+        try {
+            $stmtAg = $conn->prepare('DELETE FROM Agendamento WHERE id_cliente = ?');
+            $stmtAg->bind_param('i', $id);
+            $stmtAg->execute();
+            $stmtAg->close();
+
+            $stmt = $conn->prepare('DELETE FROM Cliente WHERE id_cliente = ?');
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+
+            mostrarAlerta('success', '🗑️ Cliente removido com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao remover cliente: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao remover cliente.');
+        }
     }
 }
 
 // --- EDITAR CLIENTE ---
 if (isset($_POST['editar'])) {
-    $id = intval($_POST['id_cliente']);
-    $nome = trim($_POST['nome']);
-    $telefone = trim($_POST['telefone']);
-    $email = trim($_POST['email']);
+    $id = intval($_POST['id_cliente'] ?? 0);
+    $nome = trim($_POST['nome'] ?? '');
+    $telefone = preg_replace('/\D+/', '', $_POST['telefone'] ?? '');
+    $email = strtolower(trim($_POST['email'] ?? ''));
 
-    $sql = "UPDATE Cliente 
-            SET nome='$nome', telefone='$telefone', email='$email' 
-            WHERE id_cliente=$id";
-    if ($conn->query($sql)) {
-        mostrarAlerta('success', '✏️ Alterações salvas com sucesso!');
+    if ($id <= 0 || $nome === '' || $telefone === '' || ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL))) {
+        mostrarAlerta('danger', '❌ Dados inválidos para atualização.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao atualizar cliente.');
+        try {
+            $stmt = $conn->prepare('UPDATE Cliente SET nome = ?, telefone = ?, email = ? WHERE id_cliente = ?');
+            $stmt->bind_param('sssi', $nome, $telefone, $email, $id);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '✏️ Alterações salvas com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao atualizar cliente: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao atualizar cliente.');
+        }
+    }
+}
+
+if (isset($_POST['__action']) && $_POST['__action'] === 'redefinir_senha') {
+    $id = intval($_POST['__id'] ?? 0);
+
+    if ($id <= 0) {
+        mostrarAlerta('danger', '❌ Cliente inválido informado.');
+    } else {
+        try {
+            $novaSenha = password_hash('1234', PASSWORD_DEFAULT);
+            $stmt = $conn->prepare('UPDATE Cliente SET senha = ? WHERE id_cliente = ?');
+            $stmt->bind_param('si', $novaSenha, $id);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '🔑 Senha redefinida para 1234 com sucesso.');
+        } catch (Throwable $exception) {
+            error_log('Erro ao redefinir senha do cliente: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Não foi possível redefinir a senha.');
+        }
     }
 }
 
@@ -69,6 +110,7 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
               class="btn btn-sm btn-secondary"
               data-confirm="redefinir_senha"
               data-id="<?= $row['id_cliente'] ?>"
+              data-form="formSenha<?= $row['id_cliente'] ?>"
               data-text="Deseja redefinir a senha de <strong><?= htmlspecialchars($row['nome']) ?></strong> para <strong>1234</strong>?">
               <i class="bi bi-key"></i>
             </button>
@@ -82,6 +124,7 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
               class="btn btn-sm btn-danger"
               data-confirm="remover_cliente"
               data-id="<?= $row['id_cliente'] ?>"
+              data-form="formRemover<?= $row['id_cliente'] ?>"
               data-text="Deseja realmente remover o cliente <strong><?= htmlspecialchars($row['nome']) ?></strong>?<br><small>Todos os agendamentos vinculados também serão excluídos.</small>">
               <i class="bi bi-trash"></i>
             </button>

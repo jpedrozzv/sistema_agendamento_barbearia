@@ -8,30 +8,53 @@ $msg = null;
 
 // --- REMOVER AGENDAMENTO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'remover_agendamento') {
-    $id = intval($_POST['__id']);
-    if ($conn->query("DELETE FROM Agendamento WHERE id_agendamento = $id")) {
-        $msg = ['success', '🗑️ Agendamento removido com sucesso!'];
+    $id = intval($_POST['__id'] ?? 0);
+
+    if ($id <= 0) {
+        $msg = ['danger', '❌ Agendamento inválido informado.'];
     } else {
-        $msg = ['danger', '❌ Erro ao remover o agendamento.'];
+        try {
+            $stmt = $conn->prepare('DELETE FROM Agendamento WHERE id_agendamento = ?');
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+            $msg = ['success', '🗑️ Agendamento removido com sucesso!'];
+        } catch (Throwable $exception) {
+            error_log('Erro ao remover agendamento: ' . $exception->getMessage());
+            $msg = ['danger', '❌ Erro ao remover o agendamento.'];
+        }
     }
 }
 
 // --- EDITAR AGENDAMENTO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'editar_agendamento') {
-    $id = intval($_POST['__id']);
-    $data = $_POST['data'];
-    $hora = $_POST['hora'];
-    $status = $_POST['status'];
+    $id = intval($_POST['__id'] ?? 0);
+    $data = trim($_POST['data'] ?? '');
+    $hora = trim($_POST['hora'] ?? '');
+    $status = $_POST['status'] ?? '';
 
-    if ($conn->query("UPDATE Agendamento SET data='$data', hora='$hora', status='$status' WHERE id_agendamento=$id")) {
-        $msg = ['success', '✏️ Agendamento atualizado com sucesso!'];
+    $dataObj = DateTimeImmutable::createFromFormat('Y-m-d', $data);
+    $statusPermitidos = ['pendente', 'confirmado', 'concluido', 'cancelado'];
+
+    if ($id <= 0 || !$dataObj || $dataObj->format('Y-m-d') !== $data || !preg_match('/^\d{2}:\d{2}$/', $hora) || !in_array($status, $statusPermitidos, true)) {
+        $msg = ['danger', '❌ Dados inválidos informados para atualização.'];
     } else {
-        $msg = ['danger', '❌ Erro ao atualizar o agendamento.'];
+        try {
+            $stmt = $conn->prepare('UPDATE Agendamento SET data = ?, hora = ?, status = ? WHERE id_agendamento = ?');
+            $stmt->bind_param('sssi', $data, $hora, $status, $id);
+            $stmt->execute();
+            $stmt->close();
+            $msg = ['success', '✏️ Agendamento atualizado com sucesso!'];
+        } catch (Throwable $exception) {
+            error_log('Erro ao atualizar agendamento: ' . $exception->getMessage());
+            $msg = ['danger', '❌ Erro ao atualizar o agendamento.'];
+        }
     }
 }
 
 // --- BUSCAR AGENDAMENTOS ---
-$sql = "SELECT 
+$stmtLista = $conn->prepare(
+    "SELECT
             a.id_agendamento,
             c.nome AS cliente,
             b.nome AS barbeiro,
@@ -46,8 +69,10 @@ $sql = "SELECT
         JOIN Cliente c ON a.id_cliente = c.id_cliente
         JOIN Barbeiro b ON a.id_barbeiro = b.id_barbeiro
         JOIN Servico s ON a.id_servico = s.id_servico
-        ORDER BY a.data DESC, a.hora DESC";
-$result = $conn->query($sql);
+        ORDER BY a.data DESC, a.hora DESC"
+);
+$stmtLista->execute();
+$result = $stmtLista->get_result();
 ?>
 
 <div class="container mt-4">
@@ -119,6 +144,7 @@ $result = $conn->query($sql);
                 class="btn btn-sm btn-danger"
                 data-confirm="remover_agendamento"
                 data-id="<?= $row['id_agendamento'] ?>"
+                data-form="formRemover<?= $row['id_agendamento'] ?>"
                 data-text="Deseja realmente <strong>remover</strong> o agendamento de <strong><?= htmlspecialchars($row['cliente']) ?></strong> com <strong><?= htmlspecialchars($row['barbeiro']) ?></strong>?">
                 <i class="bi bi-trash"></i>
               </button>
@@ -136,104 +162,62 @@ $result = $conn->query($sql);
   </a>
 </div>
 
+<?php $stmtLista->close(); ?>
 <?php include("footer.php"); ?>
 
+<div class="modal fade" id="editarModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" id="editarAgendamentoForm">
+        <div class="modal-header bg-dark text-white">
+          <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Agendamento</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" name="__action" value="editar_agendamento">
+          <input type="hidden" name="__id" id="editarId">
+          <div class="mb-3">
+            <label class="form-label">Data</label>
+            <input type="date" name="data" id="editarData" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Hora</label>
+            <input type="time" name="hora" id="editarHora" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" id="editarStatus" class="form-select">
+              <option value="pendente">Pendente</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="concluido">Concluído</option>
+              <option value="cancelado">Cancelado</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Salvar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-// Tooltip
 document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
 
-// Modal de confirmação para remoção
-document.querySelectorAll('[data-confirm]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.id;
-    const text = btn.dataset.text;
+const editarModal = document.getElementById('editarModal');
+const editarForm = document.getElementById('editarAgendamentoForm');
 
-    const modalHTML = `
-      <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar ação</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-              <p>${text}</p>
-              <p class="text-muted"><small>Esta ação não poderá ser desfeita.</small></p>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button class="btn btn-danger" id="confirmYes">Sim, remover</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    modal.show();
-
-    document.getElementById('confirmYes').addEventListener('click', () => {
-      document.getElementById(`formRemover${id}`).submit();
-      modal.hide();
-    });
-
-    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', e => e.target.remove());
-  });
-});
-
-// Modal de edição dinâmica
 document.querySelectorAll('.editar-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const id = btn.dataset.id;
-    const data = btn.dataset.data;
-    const hora = btn.dataset.hora;
-    const status = btn.dataset.status;
+    editarForm.querySelector('#editarId').value = btn.dataset.id;
+    editarForm.querySelector('#editarData').value = btn.dataset.data;
+    editarForm.querySelector('#editarHora').value = btn.dataset.hora;
+    editarForm.querySelector('#editarStatus').value = btn.dataset.status;
 
-    const modalHTML = `
-      <div class="modal fade" id="editarModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <form method="POST">
-              <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title"><i class="bi bi-pencil-square"></i> Editar Agendamento</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-              </div>
-              <div class="modal-body">
-                <input type="hidden" name="__action" value="editar_agendamento">
-                <input type="hidden" name="__id" value="${id}">
-                <div class="mb-3">
-                  <label class="form-label">Data</label>
-                  <input type="date" name="data" class="form-control" value="${data}" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Hora</label>
-                  <input type="time" name="hora" class="form-control" value="${hora}" required>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Status</label>
-                  <select name="status" class="form-select">
-                    <option value="pendente" ${status === 'pendente' ? 'selected' : ''}>Pendente</option>
-                    <option value="confirmado" ${status === 'confirmado' ? 'selected' : ''}>Confirmado</option>
-                    <option value="concluido" ${status === 'concluido' ? 'selected' : ''}>Concluído</option>
-                    <option value="cancelado" ${status === 'cancelado' ? 'selected' : ''}>Cancelado</option>
-                  </select>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Salvar</button>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    const modal = new bootstrap.Modal(document.getElementById('editarModal'));
+    const modal = new bootstrap.Modal(editarModal);
     modal.show();
-    document.getElementById('editarModal').addEventListener('hidden.bs.modal', e => e.target.remove());
   });
 });
 </script>

@@ -3,27 +3,41 @@ include("conexao.php");
 session_start();
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $nome  = $_POST['nome'];
-    $telefone = $_POST['telefone'];
-    $email = $_POST['email'];
-    $senha = password_hash($_POST['senha'], PASSWORD_DEFAULT);
+    $nome  = trim($_POST['nome'] ?? '');
+    $telefone = preg_replace('/\D+/', '', $_POST['telefone'] ?? '');
+    $email = strtolower(trim($_POST['email'] ?? ''));
+    $senha = $_POST['senha'] ?? '';
 
-
-    // Verifica se o e-mail já existe
-    $check = $conn->query("SELECT * FROM Cliente WHERE email='$email'");
-    if ($check->num_rows > 0) {
-        $msg = "<div class='alert alert-danger'>❌ Este e-mail já está cadastrado!</div>";
+    if ($nome === '' || $telefone === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($senha) < 4) {
+        $msg = "<div class='alert alert-danger'>❌ Dados informados são inválidos. Verifique e tente novamente.</div>";
     } else {
-        $sql = "INSERT INTO Cliente (nome, telefone, email, senha) 
-                VALUES ('$nome', '$telefone', '$email', '$senha')";
-        if ($conn->query($sql) === TRUE) {
-            $msg = "<div class='alert alert-success text-center'>
-                        ✅ Cadastro realizado com sucesso!<br>
-                        Você será redirecionado para o login...
-                    </div>";
-            header("refresh:4;url=login.php"); // redireciona em 4s
-        } else {
-            $msg = "<div class='alert alert-danger'>❌ Erro: " . $conn->error . "</div>";
+        try {
+            $senhaHash = password_hash($senha, PASSWORD_DEFAULT);
+
+            $check = $conn->prepare('SELECT 1 FROM Cliente WHERE email = ? LIMIT 1');
+            $check->bind_param('s', $email);
+            $check->execute();
+            $check->store_result();
+
+            if ($check->num_rows > 0) {
+                $msg = "<div class='alert alert-danger'>❌ Este e-mail já está cadastrado!</div>";
+            } else {
+                $stmt = $conn->prepare('INSERT INTO Cliente (nome, telefone, email, senha) VALUES (?, ?, ?, ?)');
+                $stmt->bind_param('ssss', $nome, $telefone, $email, $senhaHash);
+                $stmt->execute();
+
+                $msg = "<div class='alert alert-success text-center'>
+                            ✅ Cadastro realizado com sucesso!<br>
+                            Você será redirecionado para o login...
+                        </div>";
+                header("refresh:4;url=login.php");
+                $stmt->close();
+            }
+
+            $check->close();
+        } catch (Throwable $exception) {
+            error_log('Erro ao cadastrar cliente: ' . $exception->getMessage());
+            $msg = "<div class='alert alert-danger'>❌ Erro ao processar o cadastro.</div>";
         }
     }
 }
