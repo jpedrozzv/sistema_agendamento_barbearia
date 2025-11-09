@@ -1,107 +1,146 @@
 <?php
-if (!defined('HORARIOS_DISPO_TEST_MODE')) {
-    define('HORARIOS_DISPO_TEST_MODE', false);
+declare(strict_types=1);
+
+define('HORARIOS_DISPO_TEST_MODE', true);
+
+require_once __DIR__ . '/../horarios_dispo.php';
+
+class FakeResult
+{
+    private array $rows;
+    private int $index = 0;
+    public int $num_rows;
+
+    public function __construct(array $rows)
+    {
+        $this->rows = array_values($rows);
+        $this->num_rows = count($rows);
+    }
+
+    public function fetch_assoc(): ?array
+    {
+        if ($this->index >= $this->num_rows) {
+            return null;
+        }
+
+        return $this->rows[$this->index++];
+    }
 }
 
-/**
- * Retorna a grade padrão de horários (9h às 18h, de 30 em 30 minutos).
- */
-function horarios_dispo_gerar_padrao(): array
+class FakeMysqli
 {
-    $horarios = [];
+    private array $fixtures;
 
-    for ($h = 9; $h <= 18; $h++) {
-        foreach ([0, 30] as $m) {
-            $horarios[] = sprintf("%02d:%02d", $h, $m);
-        }
+    public function __construct(array $fixtures)
+    {
+        $this->fixtures = $fixtures;
     }
 
-    return $horarios;
+    public function query(string $sql): FakeResult
+    {
+        if (stripos($sql, 'from feriado') !== false) {
+            return new FakeResult($this->fixtures['feriados'] ?? []);
+        }
+
+        if (stripos($sql, 'from agendamento') !== false) {
+            return new FakeResult($this->fixtures['agendamentos'] ?? []);
+        }
+
+        throw new RuntimeException('Consulta inesperada: ' . $sql);
+    }
 }
 
-const HORARIOS_DISPO_DOMINGO_MSG = '🚫 Não é possível agendar aos domingos.';
-
-/**
- * Calcula a resposta de horários disponíveis para um barbeiro em uma data específica.
- */
-function horarios_dispo_calcular($conn, int $id_barbeiro, string $data): array
+function assertEquals(mixed $expected, mixed $actual, string $message = ''): void
 {
-    $dataObj = \DateTime::createFromFormat('Y-m-d', $data);
-
-    if (!$dataObj || $dataObj->format('Y-m-d') !== $data) {
-        return [
-            'vazio' => true,
-            'erro' => 'Data inválida informada.',
-        ];
+    if ($expected != $actual) {
+        $msg = $message !== '' ? $message . '\n' : '';
+        $msg .= 'Esperado: ' . var_export($expected, true) . '\nObtido: ' . var_export($actual, true);
+        throw new RuntimeException($msg);
     }
+}
 
-    if ((int)$dataObj->format('w') === 0) {
-        return [
-            'vazio' => true,
-            'erro' => HORARIOS_DISPO_DOMINGO_MSG,
-        ];
+function assertArrayHasKey(string $key, array $array, string $message = ''): void
+{
+    if (!array_key_exists($key, $array)) {
+        $msg = $message !== '' ? $message . '\n' : '';
+        $msg .= "Chave ausente: {$key}";
+        throw new RuntimeException($msg);
     }
+}
 
-    $feriado_sql = "SELECT * FROM Feriado WHERE data = '$data'";
-    $feriado_res = $conn->query($feriado_sql);
+$tests = [];
 
-    if ($feriado_res && $feriado_res->num_rows > 0) {
-        $feriado = $feriado_res->fetch_assoc();
-
-        return [
-            "vazio" => true,
-            "erro" => "Feriado: " . $feriado['descricao'],
-        ];
-    }
-
-    $horarios = horarios_dispo_gerar_padrao();
-    $sql = "SELECT hora, s.duracao
-            FROM Agendamento a
-            JOIN Servico s ON a.id_servico = s.id_servico
-            WHERE a.id_barbeiro = $id_barbeiro
-            AND a.data = '$data'
-            AND a.status IN ('pendente','confirmado')";
-    $res = $conn->query($sql);
-
-    $ocupados = [];
-
-    if ($res) {
-        while ($row = $res->fetch_assoc()) {
-            $inicio = strtotime($row['hora']);
-            $fim = strtotime("+{$row['duracao']} minutes", $inicio);
-
-            foreach ($horarios as $h) {
-                $t = strtotime($h);
-
-                if ($t >= $inicio && $t < $fim) {
-                    $ocupados[] = $h;
-                }
-            }
-        }
-    }
-
-    $disponiveis = array_values(array_diff($horarios, $ocupados));
-
-    return [
-        "vazio" => count($disponiveis) === 0,
-        "horarios" => $disponiveis,
+$tests['horarios_disponiveis_com_agendamentos'] = function (): void {
+    $fixtures = [
+        'feriados' => [],
+        'agendamentos' => [
+            ['hora' => '10:00', 'duracao' => 60],
+            ['hora' => '13:30', 'duracao' => 30],
+        ],
     ];
+
+    $conn = new FakeMysqli($fixtures);
+    $response = horarios_dispo_calcular($conn, 1, '2024-06-15');
+
+    assertArrayHasKey('vazio', $response);
+    assertArrayHasKey('horarios', $response);
+    assertEquals(false, $response['vazio'], 'Deve haver horários disponíveis.');
+
+    $todos_horarios = horarios_dispo_gerar_padrao();
+    $esperados = array_values(array_diff($todos_horarios, ['10:00', '10:30', '13:30']));
+
+    assertEquals($esperados, $response['horarios'], 'Horários livres não conferem com o esperado.');
+};
+
+$tests['data_em_feriado'] = function (): void {
+    $fixtures = [
+        'feriados' => [
+            ['descricao' => 'Natal'],
+        ],
+        'agendamentos' => [],
+    ];
+
+    $conn = new FakeMysqli($fixtures);
+    $response = horarios_dispo_calcular($conn, 2, '2024-12-25');
+
+    assertArrayHasKey('vazio', $response);
+    assertEquals(true, $response['vazio']);
+    assertArrayHasKey('erro', $response);
+    assertEquals('Feriado: Natal', $response['erro']);
+};
+
+$tests['json_estrutura_padrao'] = function (): void {
+    $fixtures = [
+        'feriados' => [],
+        'agendamentos' => [],
+    ];
+
+    $conn = new FakeMysqli($fixtures);
+    $response = horarios_dispo_calcular($conn, 3, '2024-08-20');
+
+    $json = json_encode($response);
+    $decoded = json_decode($json, true);
+
+    assertEquals($response, $decoded, 'JSON deve ser válido e manter a estrutura original.');
+    assertEquals(20, count($response['horarios']), 'Grade padrão deve conter 20 horários.');
+};
+
+$failures = 0;
+foreach ($tests as $name => $test) {
+    try {
+        $test();
+        echo ".";
+    } catch (Throwable $e) {
+        $failures++;
+        echo "F\nFalha em {$name}: \n" . $e->getMessage() . "\n";
+    }
 }
 
-if (!HORARIOS_DISPO_TEST_MODE) {
-    if (!isset($conn)) {
-        include "conexao.php";
-    }
+echo "\n";
 
-    if (!isset($_GET['id_barbeiro']) || !isset($_GET['data'])) {
-        echo json_encode(["vazio" => true, "erro" => "Parâmetros ausentes"]);
-        exit;
-    }
-
-    $id_barbeiro = intval($_GET['id_barbeiro']);
-    $data = $_GET['data'];
-    $response = horarios_dispo_calcular($conn, $id_barbeiro, $data);
-
-    echo json_encode($response);
-    exit;
+if ($failures > 0) {
+    echo "{$failures} teste(s) falhou/falharam.\n";
+    exit(1);
 }
+
+echo "Todos os testes passaram.\n";
