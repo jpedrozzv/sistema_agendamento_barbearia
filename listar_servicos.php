@@ -1,5 +1,4 @@
 <?php include "header_adm.php"; ?>
-<?php include "alerta.php"; ?>
 
 <?php
 // --- ADICIONAR SERVIÇO ---
