@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/src/horarios.php';
 include("conexao.php");
 include("verifica_cliente.php");
 include("alerta.php");
@@ -10,25 +11,43 @@ $mensagemDomingo = '🚫 Não é possível agendar aos domingos.';
 
 // --- AGENDAR SERVIÇO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'novo_agendamento') {
-    $id_barbeiro = intval($_POST['barbeiro']);
-    $id_servico = intval($_POST['servico']);
-    $data = $_POST['data'];
-    $hora = $_POST['hora'];
-    $observacao = trim($_POST['observacao']);
+    $id_barbeiro = intval($_POST['barbeiro'] ?? 0);
+    $id_servico = intval($_POST['servico'] ?? 0);
+    $data = trim($_POST['data'] ?? '');
+    $hora = trim($_POST['hora'] ?? '');
+    $observacao = trim($_POST['observacao'] ?? '');
 
-    $dataObj = \DateTime::createFromFormat('Y-m-d', $data);
+    $dataObj = horarios_dispo_validar_data($data);
 
-    if (!$dataObj || $dataObj->format('Y-m-d') !== $data) {
+    if (!$id_barbeiro || !$id_servico) {
+        mostrarAlerta('danger', '❌ É necessário selecionar um barbeiro e um serviço.');
+    } elseif (!$dataObj) {
         mostrarAlerta('danger', '❌ Data inválida informada.');
+    } elseif (!preg_match('/^\d{2}:\d{2}$/', $hora)) {
+        mostrarAlerta('danger', '❌ Hora inválida informada.');
     } elseif ((int)$dataObj->format('w') === 0) {
         mostrarAlerta('danger', $mensagemDomingo);
     } else {
-        $sql = "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, observacao, status)
-                VALUES ($id_cliente, $id_barbeiro, $id_servico, '$data', '$hora', '$observacao', 'pendente')";
+        try {
+            $disponibilidade = horarios_dispo_calcular($conn, $id_barbeiro, $dataObj->format('Y-m-d'));
+            if ($disponibilidade['vazio'] || !in_array($hora, $disponibilidade['horarios'], true)) {
+                mostrarAlerta('danger', '❌ O horário selecionado não está mais disponível.');
+            } else {
+                $stmt = $conn->prepare(
+                    "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, observacao, status)
+                     VALUES (?, ?, ?, ?, ?, ?, 'pendente')"
+                );
 
-        if ($conn->query($sql)) {
-            mostrarAlerta('success', '✅ Agendamento realizado com sucesso! Aguarde a confirmação do barbeiro.');
-        } else {
+                $observacaoDb = $observacao !== '' ? $observacao : null;
+                $dataDb = $dataObj->format('Y-m-d');
+                $stmt->bind_param('iiisss', $id_cliente, $id_barbeiro, $id_servico, $dataDb, $hora, $observacaoDb);
+                $stmt->execute();
+                $stmt->close();
+
+                mostrarAlerta('success', '✅ Agendamento realizado com sucesso! Aguarde a confirmação do barbeiro.');
+            }
+        } catch (Throwable $exception) {
+            error_log('Erro ao criar agendamento: ' . $exception->getMessage());
             mostrarAlerta('danger', '❌ Erro ao realizar o agendamento.');
         }
     }

@@ -8,22 +8,45 @@ $msg = null;
 
 // --- ADICIONAR FERIADO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'add_feriado') {
-    $data = $_POST['data'];
-    $descricao = trim($_POST['descricao']);
-    if ($conn->query("INSERT INTO Feriado (data, descricao) VALUES ('$data', '$descricao')")) {
-        $msg = ['success', '✅ Feriado adicionado com sucesso!'];
+    $data = trim($_POST['data'] ?? '');
+    $descricao = trim($_POST['descricao'] ?? '');
+    $dataObj = DateTimeImmutable::createFromFormat('Y-m-d', $data);
+
+    if (!$dataObj || $dataObj->format('Y-m-d') !== $data || $descricao === '') {
+        $msg = ['danger', '❌ Informe uma data válida e a descrição do feriado.'];
     } else {
-        $msg = ['danger', '❌ Erro ao adicionar feriado.'];
+        try {
+            $stmt = $conn->prepare('INSERT INTO Feriado (data, descricao) VALUES (?, ?)');
+            $stmt->bind_param('ss', $data, $descricao);
+            $stmt->execute();
+            $stmt->close();
+
+            $msg = ['success', '✅ Feriado adicionado com sucesso!'];
+        } catch (Throwable $exception) {
+            error_log('Erro ao inserir feriado: ' . $exception->getMessage());
+            $msg = ['danger', '❌ Erro ao adicionar feriado.'];
+        }
     }
 }
 
 // --- REMOVER FERIADO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'remove_feriado') {
-    $id = intval($_POST['__id']);
-    if ($conn->query("DELETE FROM Feriado WHERE id_feriado = $id")) {
-        $msg = ['success', '🗑️ Feriado removido com sucesso!'];
+    $id = intval($_POST['__id'] ?? 0);
+
+    if ($id <= 0) {
+        $msg = ['danger', '❌ Feriado inválido informado.'];
     } else {
-        $msg = ['danger', '❌ Erro ao remover feriado.'];
+        try {
+            $stmt = $conn->prepare('DELETE FROM Feriado WHERE id_feriado = ?');
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+
+            $msg = ['success', '🗑️ Feriado removido com sucesso!'];
+        } catch (Throwable $exception) {
+            error_log('Erro ao remover feriado: ' . $exception->getMessage());
+            $msg = ['danger', '❌ Erro ao remover feriado.'];
+        }
     }
 }
 
@@ -80,6 +103,7 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
                 class="btn btn-sm btn-danger"
                 data-confirm="remove_feriado"
                 data-id="<?= $f['id_feriado'] ?>"
+                data-form="formRemove<?= $f['id_feriado'] ?>"
                 data-text="Deseja realmente remover o feriado <strong><?= htmlspecialchars($f['descricao']) ?></strong> do dia <strong><?= date('d/m/Y', strtotime($f['data'])) ?></strong>?">
                 <i class="bi bi-trash"></i>
               </button>
@@ -98,46 +122,3 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
 </div>
 
 <?php include("footer.php"); ?>
-
-<script>
-// Função global para modais de confirmação
-document.querySelectorAll('[data-confirm]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.id;
-    const text = btn.dataset.text;
-
-    const modalHTML = `
-      <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar ação</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-              <p>${text}</p>
-              <p class="text-muted"><small>Esta ação não poderá ser desfeita.</small></p>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button class="btn btn-danger" id="confirmYes">Sim, remover</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    modal.show();
-
-    document.getElementById('confirmYes').addEventListener('click', () => {
-      document.getElementById(`formRemove${id}`).submit();
-      modal.hide();
-    });
-
-    // Remove modal após fechar
-    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', e => e.target.remove());
-  });
-});
-</script>

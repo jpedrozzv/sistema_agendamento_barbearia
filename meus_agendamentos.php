@@ -6,17 +6,29 @@ include("header_cliente.php");
 
 // --- CANCELAR AGENDAMENTO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'cancelar_agendamento') {
-    $id = intval($_POST['__id']);
-    if ($conn->query("UPDATE Agendamento SET status='cancelado' WHERE id_agendamento=$id AND id_cliente=".$_SESSION['cliente_id'])) {
-        mostrarAlerta('success', '🗑️ Agendamento cancelado com sucesso!');
+    $id = intval($_POST['__id'] ?? 0);
+    $idCliente = $_SESSION['cliente_id'] ?? 0;
+
+    if ($id <= 0 || $idCliente <= 0) {
+        mostrarAlerta('danger', '❌ Agendamento inválido informado.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao cancelar o agendamento.');
+        try {
+            $stmt = $conn->prepare("UPDATE Agendamento SET status='cancelado' WHERE id_agendamento = ? AND id_cliente = ?");
+            $stmt->bind_param('ii', $id, $idCliente);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '🗑️ Agendamento cancelado com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao cancelar agendamento: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao cancelar o agendamento.');
+        }
     }
 }
 
 // --- BUSCAR AGENDAMENTOS DO CLIENTE ---
 $id_cliente = $_SESSION['cliente_id'];
-$sql = "SELECT 
+$stmt = $conn->prepare(
+    "SELECT
             a.id_agendamento,
             b.nome AS barbeiro,
             s.descricao AS servico,
@@ -28,9 +40,12 @@ $sql = "SELECT
         FROM Agendamento a
         JOIN Barbeiro b ON a.id_barbeiro = b.id_barbeiro
         JOIN Servico s ON a.id_servico = s.id_servico
-        WHERE a.id_cliente = $id_cliente
-        ORDER BY a.data DESC, a.hora DESC";
-$result = $conn->query($sql);
+        WHERE a.id_cliente = ?
+        ORDER BY a.data DESC, a.hora DESC"
+);
+$stmt->bind_param('i', $id_cliente);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <div class="container mt-4">
@@ -83,6 +98,7 @@ $result = $conn->query($sql);
                   class="btn btn-sm btn-danger"
                   data-confirm="cancelar_agendamento"
                   data-id="<?= $row['id_agendamento'] ?>"
+                  data-form="formCancelar<?= $row['id_agendamento'] ?>"
                   data-text="Deseja realmente <strong>cancelar</strong> o agendamento de
                              <strong><?= htmlspecialchars($row['servico']) ?></strong> com
                              <strong><?= htmlspecialchars($row['barbeiro']) ?></strong> em
@@ -107,49 +123,5 @@ $result = $conn->query($sql);
   </a>
 </div>
 
+<?php $stmt->close(); ?>
 <?php include("footer.php"); ?>
-
-<script>
-// Tooltip
-document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
-
-// Modal de confirmação
-document.querySelectorAll('[data-confirm]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const id = btn.dataset.id;
-    const text = btn.dataset.text;
-
-    const modalHTML = `
-      <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-              <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar cancelamento</h5>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body text-center">
-              <p>${text}</p>
-              <p class="text-muted"><small>Esta ação não poderá ser desfeita.</small></p>
-            </div>
-            <div class="modal-footer">
-              <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-              <button class="btn btn-danger" id="confirmYes">Sim, cancelar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
-    modal.show();
-
-    document.getElementById('confirmYes').addEventListener('click', () => {
-      document.getElementById(`formCancelar${id}`).submit();
-      modal.hide();
-    });
-
-    document.getElementById('confirmModal').addEventListener('hidden.bs.modal', e => e.target.remove());
-  });
-});
-</script>

@@ -32,35 +32,50 @@
 (function(){
   const modalEl = document.getElementById('confirmModal');
   if (!modalEl) return;
+
   const modal = new bootstrap.Modal(modalEl);
+  const modalBody = document.getElementById('confirmModalBody');
+  const form = document.getElementById('confirmForm');
+  const actionInput = document.getElementById('confirmAction');
+  const idInput = document.getElementById('confirmId');
+  const confirmBtn = document.getElementById('confirmYesBtn');
 
-  document.addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-confirm]');
-    if (!btn) return;
+  let externalFormId = null;
 
-    const action = btn.getAttribute('data-confirm') || '';
-    const id     = btn.getAttribute('data-id') || '';
-    const text   = btn.getAttribute('data-text') || 'Tem certeza?';
-    const formId = btn.getAttribute('data-form') || '';
-    const method = btn.getAttribute('data-method') || 'POST';
+  document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-confirm]');
+    if (!button) {
+      return;
+    }
 
-    document.getElementById('confirmModalBody').innerHTML = text;
-    document.getElementById('confirmAction').value = action;
-    document.getElementById('confirmId').value = id;
+    event.preventDefault();
 
-    const form = document.getElementById('confirmForm');
-    form.method = method;
+    externalFormId = button.getAttribute('data-form') || null;
+    actionInput.value = button.getAttribute('data-confirm') || '';
+    idInput.value = button.getAttribute('data-id') || '';
+    form.method = button.getAttribute('data-method') || 'POST';
+    form.action = button.getAttribute('data-action') || '';
+    modalBody.innerHTML = button.getAttribute('data-text') || 'Tem certeza?';
 
-    if (formId) {
-      // Se quiser enviar num form específico (ex.: com mais campos hidden)
-      const externalForm = document.getElementById(formId);
+    modal.show();
+  });
+
+  confirmBtn.addEventListener('click', () => {
+    if (externalFormId) {
+      const externalForm = document.getElementById(externalFormId);
       if (externalForm) {
-        // Copia os hidden para o form do modal
-        form.innerHTML = externalForm.innerHTML + form.innerHTML;
+        externalForm.submit();
+        modal.hide();
+        return;
       }
     }
 
-    modal.show();
+    form.submit();
+    modal.hide();
+  });
+
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    externalFormId = null;
   });
 })();
 </script>

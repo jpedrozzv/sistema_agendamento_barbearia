@@ -3,44 +3,66 @@
 <?php
 // --- ADICIONAR SERVIÇO ---
 if (isset($_POST['adicionar'])) {
-    $descricao = trim($_POST['descricao']);
-    $preco = floatval($_POST['preco']);
-    $duracao = intval($_POST['duracao']);
+    $descricao = trim($_POST['descricao'] ?? '');
+    $preco = floatval($_POST['preco'] ?? 0);
+    $duracao = intval($_POST['duracao'] ?? 0);
 
-    $sql = "INSERT INTO Servico (descricao, preco, duracao)
-            VALUES ('$descricao', '$preco', '$duracao')";
-    if ($conn->query($sql)) {
-        mostrarAlerta('success', '✅ Serviço adicionado com sucesso!');
+    if ($descricao === '' || $preco <= 0 || $duracao <= 0) {
+        mostrarAlerta('danger', '❌ Informe descrição, preço e duração válidos.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao adicionar serviço.');
+        try {
+            $stmt = $conn->prepare('INSERT INTO Servico (descricao, preco, duracao) VALUES (?, ?, ?)');
+            $stmt->bind_param('sdi', $descricao, $preco, $duracao);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '✅ Serviço adicionado com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao adicionar serviço: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao adicionar serviço.');
+        }
     }
 }
 
 // --- EDITAR SERVIÇO ---
 if (isset($_POST['editar'])) {
-    $id = intval($_POST['id_servico']);
-    $descricao = trim($_POST['descricao']);
-    $preco = floatval($_POST['preco']);
-    $duracao = intval($_POST['duracao']);
+    $id = intval($_POST['id_servico'] ?? 0);
+    $descricao = trim($_POST['descricao'] ?? '');
+    $preco = floatval($_POST['preco'] ?? 0);
+    $duracao = intval($_POST['duracao'] ?? 0);
 
-    $sql = "UPDATE Servico
-            SET descricao='$descricao', preco='$preco', duracao='$duracao'
-            WHERE id_servico=$id";
-
-    if ($conn->query($sql)) {
-        mostrarAlerta('success', '✏️ Alterações salvas com sucesso!');
+    if ($id <= 0 || $descricao === '' || $preco <= 0 || $duracao <= 0) {
+        mostrarAlerta('danger', '❌ Dados inválidos para atualização.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao salvar alterações.');
+        try {
+            $stmt = $conn->prepare('UPDATE Servico SET descricao = ?, preco = ?, duracao = ? WHERE id_servico = ?');
+            $stmt->bind_param('sdii', $descricao, $preco, $duracao, $id);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '✏️ Alterações salvas com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao atualizar serviço: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao salvar alterações.');
+        }
     }
 }
 
 // --- REMOVER SERVIÇO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'remover_servico') {
-    $id = intval($_POST['__id']);
-    if ($conn->query("DELETE FROM Servico WHERE id_servico = $id")) {
-        mostrarAlerta('success', '🗑️ Serviço removido com sucesso!');
+    $id = intval($_POST['__id'] ?? 0);
+
+    if ($id <= 0) {
+        mostrarAlerta('danger', '❌ Serviço inválido informado.');
     } else {
-        mostrarAlerta('danger', '❌ Erro ao remover serviço.');
+        try {
+            $stmt = $conn->prepare('DELETE FROM Servico WHERE id_servico = ?');
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $stmt->close();
+            mostrarAlerta('success', '🗑️ Serviço removido com sucesso!');
+        } catch (Throwable $exception) {
+            error_log('Erro ao remover serviço: ' . $exception->getMessage());
+            mostrarAlerta('danger', '❌ Erro ao remover serviço.');
+        }
     }
 }
 
@@ -106,6 +128,7 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
               class="btn btn-sm btn-danger"
               data-confirm="remover_servico"
               data-id="<?= $row['id_servico'] ?>"
+              data-form="formRemover<?= $row['id_servico'] ?>"
               data-text="Deseja realmente remover o serviço <strong><?= htmlspecialchars($row['descricao']) ?></strong>?<br><small>Todos os agendamentos associados também serão afetados.</small>">
               <i class="bi bi-trash"></i>
             </button>
