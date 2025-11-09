@@ -6,6 +6,7 @@ include("header_cliente.php");
 
 $id_cliente = $_SESSION['cliente_id'] ?? 0;
 $msg = null;
+$mensagemDomingo = '🚫 Não é possível agendar aos domingos.';
 
 // --- AGENDAR SERVIÇO ---
 if (isset($_POST['__action']) && $_POST['__action'] === 'novo_agendamento') {
@@ -15,13 +16,21 @@ if (isset($_POST['__action']) && $_POST['__action'] === 'novo_agendamento') {
     $hora = $_POST['hora'];
     $observacao = trim($_POST['observacao']);
 
-    $sql = "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, observacao, status)
-            VALUES ($id_cliente, $id_barbeiro, $id_servico, '$data', '$hora', '$observacao', 'pendente')";
+    $dataObj = \DateTime::createFromFormat('Y-m-d', $data);
 
-    if ($conn->query($sql)) {
-        mostrarAlerta('success', '✅ Agendamento realizado com sucesso! Aguarde a confirmação do barbeiro.');
+    if (!$dataObj || $dataObj->format('Y-m-d') !== $data) {
+        mostrarAlerta('danger', '❌ Data inválida informada.');
+    } elseif ((int)$dataObj->format('w') === 0) {
+        mostrarAlerta('danger', $mensagemDomingo);
     } else {
-        mostrarAlerta('danger', '❌ Erro ao realizar o agendamento.');
+        $sql = "INSERT INTO Agendamento (id_cliente, id_barbeiro, id_servico, data, hora, observacao, status)
+                VALUES ($id_cliente, $id_barbeiro, $id_servico, '$data', '$hora', '$observacao', 'pendente')";
+
+        if ($conn->query($sql)) {
+            mostrarAlerta('success', '✅ Agendamento realizado com sucesso! Aguarde a confirmação do barbeiro.');
+        } else {
+            mostrarAlerta('danger', '❌ Erro ao realizar o agendamento.');
+        }
     }
 }
 
@@ -34,6 +43,7 @@ $servicos = $conn->query("SELECT id_servico, descricao, preco, duracao FROM Serv
   <h2 class="text-center mb-4">💈 Novo Agendamento</h2>
 
   <?php if (isset($_SESSION['alerta'])) { echo $_SESSION['alerta']; unset($_SESSION['alerta']); } ?>
+  <div id="js-alert-placeholder"></div>
 
   <form method="POST" class="card p-4 shadow-sm border-0">
     <input type="hidden" name="__action" value="novo_agendamento">
@@ -92,5 +102,63 @@ $servicos = $conn->query("SELECT id_servico, descricao, preco, duracao FROM Serv
     <i class="bi bi-info-circle"></i> Após o envio, o barbeiro confirmará o horário.
   </div>
 </div>
+
+<script>
+  (function() {
+    const alertPlaceholder = document.getElementById('js-alert-placeholder');
+    const form = document.querySelector('form[method="POST"]');
+    const dateInput = form ? form.querySelector('input[name="data"]') : null;
+    const sundayMessage = '🚫 Não é possível agendar aos domingos.';
+
+    if (!alertPlaceholder || !form || !dateInput) {
+      return;
+    }
+
+    const buildAlert = () => `
+      <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+        ${sundayMessage}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+
+    const showAlert = () => {
+      alertPlaceholder.innerHTML = buildAlert();
+    };
+
+    const clearAlert = () => {
+      alertPlaceholder.innerHTML = '';
+    };
+
+    const isSunday = (value) => {
+      if (!value) {
+        return false;
+      }
+
+      const date = new Date(`${value}T00:00`);
+
+      return !Number.isNaN(date.getTime()) && date.getDay() === 0;
+    };
+
+    const handleSundayState = () => {
+      if (isSunday(dateInput.value)) {
+        showAlert();
+      } else {
+        clearAlert();
+      }
+    };
+
+    dateInput.addEventListener('change', handleSundayState);
+
+    form.addEventListener('submit', (event) => {
+      if (isSunday(dateInput.value)) {
+        event.preventDefault();
+        showAlert();
+        dateInput.focus();
+      }
+    });
+
+    handleSundayState();
+  })();
+</script>
 
 <?php include("footer.php"); ?>
