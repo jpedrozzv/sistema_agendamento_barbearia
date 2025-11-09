@@ -75,84 +75,136 @@ $stmtLista->execute();
 $result = $stmtLista->get_result();
 ?>
 
+<style>
+  .agendamentos-table-wrapper {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  .agendamentos-table-wrapper .table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background-color: var(--bs-table-bg);
+  }
+
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    white-space: normal;
+  }
+</style>
+
 <div class="container mt-4">
   <h2 class="text-center mb-4">📅 Lista de Agendamentos</h2>
 
   <?php if ($msg) mostrarAlerta($msg[0], $msg[1]); ?>
 
   <?php if ($result->num_rows > 0): ?>
-    <table class="table table-bordered table-hover shadow-sm align-middle">
-      <thead class="table-dark text-center">
-        <tr>
-          <th>ID</th>
-          <th>Cliente</th>
-          <th>Barbeiro</th>
-          <th>Serviço</th>
-          <th>Data</th>
-          <th>Hora</th>
-          <th>Status</th>
-          <th>Observação</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody class="text-center">
-        <?php while ($row = $result->fetch_assoc()): ?>
-          <?php
-            $badge = match($row['status']) {
-              'pendente' => 'warning',
-              'confirmado' => 'primary',
-              'concluido' => 'success',
-              'cancelado' => 'danger',
-              default => 'secondary'
-            };
-          ?>
-          <tr>
-            <td><?= $row['id_agendamento'] ?></td>
-            <td><?= htmlspecialchars($row['cliente']) ?></td>
-            <td><?= htmlspecialchars($row['barbeiro']) ?></td>
-            <td><?= htmlspecialchars($row['servico']) ?><br>
-              <small>(R$ <?= number_format($row['preco'], 2, ',', '.') ?> - <?= $row['duracao'] ?> min)</small>
-            </td>
-            <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
-            <td><?= date('H:i', strtotime($row['hora'])) ?></td>
-            <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
-            <td class="observacao" title="<?= htmlspecialchars($row['observacao'] ?: 'Sem observação') ?>">
-              <?= htmlspecialchars($row['observacao'] ?: '-') ?>
-            </td>
-            <td>
-              <!-- Form editar -->
-              <form method="POST" class="d-inline">
-                <input type="hidden" name="__action" value="editar_agendamento">
-                <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-warning editar-btn"
-                  data-id="<?= $row['id_agendamento'] ?>"
-                  data-data="<?= $row['data'] ?>"
-                  data-hora="<?= $row['hora'] ?>"
-                  data-status="<?= $row['status'] ?>">
-                  <i class="bi bi-pencil"></i>
-                </button>
-              </form>
-
-              <!-- Form remover -->
-              <form id="formRemover<?= $row['id_agendamento'] ?>" method="POST" class="d-inline">
-                <input type="hidden" name="__action" value="remover_agendamento">
-                <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">
-              </form>
-              <button
-                class="btn btn-sm btn-danger"
-                data-confirm="remover_agendamento"
-                data-id="<?= $row['id_agendamento'] ?>"
-                data-form="formRemover<?= $row['id_agendamento'] ?>"
-                data-text="Deseja realmente <strong>remover</strong> o agendamento de <strong><?= htmlspecialchars($row['cliente']) ?></strong> com <strong><?= htmlspecialchars($row['barbeiro']) ?></strong>?">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="agendamentos-table-wrapper table-responsive">
+          <table class="table table-striped table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr class="text-nowrap text-center">
+                <th scope="col">Cliente</th>
+                <th scope="col">Barbeiro</th>
+                <th scope="col" class="text-start">Serviço</th>
+                <th scope="col">Data</th>
+                <th scope="col">Hora</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="text-start">Observações</th>
+                <th scope="col" class="text-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while ($row = $result->fetch_assoc()): ?>
+                <?php
+                  $badge = match($row['status']) {
+                    'pendente' => 'warning',
+                    'confirmado' => 'primary',
+                    'concluido' => 'success',
+                    'cancelado' => 'danger',
+                    default => 'secondary'
+                  };
+                  $observacaoTexto = trim($row['observacao'] ?? '');
+                ?>
+                <tr>
+                  <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($row['cliente']) ?>">
+                    <?= htmlspecialchars($row['cliente']) ?>
+                  </td>
+                  <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($row['barbeiro']) ?>">
+                    <?= htmlspecialchars($row['barbeiro']) ?>
+                  </td>
+                  <td class="text-start">
+                    <div class="fw-semibold text-truncate" style="max-width: 220px;" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($row['servico']) ?>">
+                      <?= htmlspecialchars($row['servico']) ?>
+                    </div>
+                    <small class="text-muted">R$ <?= number_format($row['preco'], 2, ',', '.') ?> · <?= $row['duracao'] ?> min</small>
+                  </td>
+                  <td class="text-nowrap"><?= date('d/m/Y', strtotime($row['data'])) ?></td>
+                  <td class="text-nowrap"><?= date('H:i', strtotime($row['hora'])) ?></td>
+                  <td>
+                    <span class="badge bg-<?= $badge ?>">
+                      <?= ucfirst($row['status']) ?>
+                    </span>
+                  </td>
+                  <td class="text-start" style="max-width: 260px;">
+                    <?php if ($observacaoTexto !== ''): ?>
+                      <span
+                        class="d-inline-block clamp-2 text-break"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        title="<?= htmlspecialchars($observacaoTexto) ?>"
+                        aria-label="Observações completas: <?= htmlspecialchars($observacaoTexto) ?>">
+                        <?= htmlspecialchars($observacaoTexto) ?>
+                      </span>
+                    <?php else: ?>
+                      <span class="text-muted fst-italic">Sem observações</span>
+                    <?php endif; ?>
+                  </td>
+                  <td class="text-center text-nowrap" style="width: 110px;">
+                    <div class="d-flex justify-content-center gap-2">
+                      <form method="POST" class="d-inline">
+                        <input type="hidden" name="__action" value="editar_agendamento">
+                        <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-warning editar-btn"
+                          data-id="<?= $row['id_agendamento'] ?>"
+                          data-data="<?= $row['data'] ?>"
+                          data-hora="<?= $row['hora'] ?>"
+                          data-status="<?= $row['status'] ?>"
+                          title="Editar agendamento"
+                          aria-label="Editar agendamento de <?= htmlspecialchars($row['cliente']) ?> com <?= htmlspecialchars($row['barbeiro']) ?>">
+                          <i class="bi bi-pencil"></i>
+                        </button>
+                      </form>
+                      <form id="formRemover<?= $row['id_agendamento'] ?>" method="POST" class="d-inline">
+                        <input type="hidden" name="__action" value="remover_agendamento">
+                        <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">
+                      </form>
+                      <button
+                        class="btn btn-sm btn-danger"
+                        data-confirm="remover_agendamento"
+                        data-id="<?= $row['id_agendamento'] ?>"
+                        data-form="formRemover<?= $row['id_agendamento'] ?>"
+                        data-text="Deseja realmente <strong>remover</strong> o agendamento de <strong><?= htmlspecialchars($row['cliente']) ?></strong> com <strong><?= htmlspecialchars($row['barbeiro']) ?></strong>?"
+                        title="Remover agendamento"
+                        aria-label="Remover agendamento de <?= htmlspecialchars($row['cliente']) ?> com <?= htmlspecialchars($row['barbeiro']) ?>">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   <?php else: ?>
     <div class="alert alert-warning text-center">Nenhum agendamento encontrado.</div>
   <?php endif; ?>
@@ -204,7 +256,7 @@ $result = $stmtLista->get_result();
 </div>
 
 <script>
-document.querySelectorAll('[title]').forEach(el => new bootstrap.Tooltip(el));
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
 
 const editarModal = document.getElementById('editarModal');
 const editarForm = document.getElementById('editarAgendamentoForm');
