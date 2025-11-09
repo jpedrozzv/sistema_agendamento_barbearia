@@ -19,11 +19,29 @@ function horarios_dispo_gerar_padrao(): array
     return $horarios;
 }
 
+const HORARIOS_DISPO_DOMINGO_MSG = '🚫 Não é possível agendar aos domingos.';
+
 /**
  * Calcula a resposta de horários disponíveis para um barbeiro em uma data específica.
  */
 function horarios_dispo_calcular($conn, int $id_barbeiro, string $data): array
 {
+    $dataObj = \DateTime::createFromFormat('Y-m-d', $data);
+
+    if (!$dataObj || $dataObj->format('Y-m-d') !== $data) {
+        return [
+            'vazio' => true,
+            'erro' => 'Data inválida informada.',
+        ];
+    }
+
+    if ((int)$dataObj->format('w') === 0) {
+        return [
+            'vazio' => true,
+            'erro' => HORARIOS_DISPO_DOMINGO_MSG,
+        ];
+    }
+
     $feriado_sql = "SELECT * FROM Feriado WHERE data = '$data'";
     $feriado_res = $conn->query($feriado_sql);
 

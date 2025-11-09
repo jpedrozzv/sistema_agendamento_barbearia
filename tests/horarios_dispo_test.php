@@ -109,6 +109,21 @@ $tests['data_em_feriado'] = function (): void {
     assertEquals('Feriado: Natal', $response['erro']);
 };
 
+$tests['data_em_domingo'] = function (): void {
+    $fixtures = [
+        'feriados' => [],
+        'agendamentos' => [],
+    ];
+
+    $conn = new FakeMysqli($fixtures);
+    $response = horarios_dispo_calcular($conn, 4, '2024-06-16');
+
+    assertArrayHasKey('vazio', $response);
+    assertEquals(true, $response['vazio']);
+    assertArrayHasKey('erro', $response);
+    assertEquals(HORARIOS_DISPO_DOMINGO_MSG, $response['erro']);
+};
+
 $tests['json_estrutura_padrao'] = function (): void {
     $fixtures = [
         'feriados' => [],
