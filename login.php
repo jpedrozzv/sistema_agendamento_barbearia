@@ -60,12 +60,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       min-height: 100vh;
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      background-color: #111;
-      background-image:
-        linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(0, 0, 0, 0.9)),
-        url('https://www.transparenttextures.com/patterns/asfalt-light.png');
-      background-size: cover;
-      background-attachment: fixed;
+      background: radial-gradient(circle at top left, rgba(22, 40, 66, 0.55), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(3, 9, 19, 0.85), #050608 80%);
+      background-color: #050608;
       color: #f5f5f5;
     }
 
@@ -78,10 +75,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     .login-card {
-      background: rgba(16, 16, 16, 0.92);
+      background: linear-gradient(150deg, rgba(11, 14, 22, 0.95), rgba(9, 22, 39, 0.95));
       border-radius: 1.25rem;
-      border: 1px solid rgba(255, 215, 0, 0.25);
-      box-shadow: 0 25px 55px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(54, 107, 171, 0.35);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
       overflow: hidden;
       max-width: 420px;
       width: 100%;
@@ -93,8 +90,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       content: "";
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at top right, rgba(255, 215, 0, 0.15), transparent 55%);
+      background: radial-gradient(circle at top right, rgba(54, 107, 171, 0.2), transparent 55%);
       pointer-events: none;
+    }
+
+    .login-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 1.2rem;
+      height: 100%;
+      width: 6px;
+      background: repeating-linear-gradient(
+        180deg,
+        #0f1e33,
+        #0f1e33 10px,
+        #ffffff 10px,
+        #ffffff 20px,
+        #b32026 20px,
+        #b32026 30px
+      );
+      opacity: 0.25;
+      filter: blur(0.5px);
     }
 
     .brand-area {
@@ -108,14 +125,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       width: 68px;
       height: 68px;
       border-radius: 50%;
-      background: linear-gradient(135deg, rgba(255, 215, 0, 0.35), rgba(255, 215, 0, 0.05));
+      background: linear-gradient(145deg, rgba(54, 107, 171, 0.35), rgba(5, 11, 20, 0.95));
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 1rem;
       font-size: 2rem;
-      color: #f8d27a;
-      border: 1px solid rgba(255, 215, 0, 0.3);
+      color: #c5ddff;
+      border: 1px solid rgba(81, 142, 213, 0.4);
+      box-shadow: inset 0 0 12px rgba(11, 24, 40, 0.9);
     }
 
     .brand-area h1 {
@@ -123,11 +141,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       font-size: 1.9rem;
       margin-bottom: 0.25rem;
       letter-spacing: 0.05em;
+      color: #ebf4ff;
     }
 
     .brand-area span {
       font-size: 0.95rem;
-      color: rgba(229, 229, 229, 0.75);
+      color: rgba(197, 213, 237, 0.75);
       text-transform: uppercase;
       letter-spacing: 0.35em;
       font-weight: 600;
@@ -137,67 +156,72 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     label.form-label {
       font-weight: 600;
-      color: rgba(245, 245, 245, 0.85);
+      color: rgba(229, 236, 246, 0.85);
       position: relative;
       z-index: 2;
     }
 
     .input-group-text {
-      background: rgba(255, 215, 0, 0.08);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      color: #f8d27a;
+      background: rgba(21, 43, 72, 0.6);
+      border: 1px solid rgba(54, 107, 171, 0.45);
+      color: #9fc4ff;
     }
 
     .form-control {
-      background-color: rgba(24, 24, 24, 0.85);
-      border: 1px solid rgba(255, 215, 0, 0.18);
+      background-color: rgba(10, 15, 24, 0.85);
+      border: 1px solid rgba(54, 107, 171, 0.3);
       color: #f5f5f5;
     }
 
     .form-control:focus {
-      background-color: rgba(27, 27, 27, 0.95);
-      border-color: rgba(255, 215, 0, 0.45);
-      box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.18);
+      background-color: rgba(13, 22, 35, 0.95);
+      border-color: rgba(126, 173, 232, 0.65);
+      box-shadow: 0 0 0 0.2rem rgba(54, 107, 171, 0.25);
       color: #fff;
     }
 
     .btn-login {
-      background: linear-gradient(135deg, #f8d27a, #b8860b);
-      border: none;
-      color: #1b1b1b;
+      background: linear-gradient(140deg, #1e3a5c, #10213a 55%, #1f4f82);
+      border: 1px solid rgba(88, 146, 214, 0.45);
+      color: #f5f8ff;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       padding: 0.9rem 1rem;
       border-radius: 0.9rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
       position: relative;
       z-index: 2;
+      box-shadow: 0 18px 32px rgba(9, 21, 36, 0.55);
     }
 
     .btn-login:hover {
       transform: translateY(-2px);
-      box-shadow: 0 18px 30px rgba(0, 0, 0, 0.45);
+      filter: brightness(1.08);
+      box-shadow: 0 22px 38px rgba(7, 15, 26, 0.65);
     }
 
     .signup-link {
-      color: rgba(248, 210, 122, 0.9);
+      color: rgba(146, 187, 240, 0.9);
       font-weight: 500;
       text-decoration: none;
     }
 
     .signup-link:hover {
-      color: #f8d27a;
+      color: #a9c8ff;
       text-decoration: underline;
     }
 
     .alert {
       border-radius: 0.75rem;
       font-weight: 500;
+      background-color: rgba(179, 32, 38, 0.18);
+      border-color: rgba(179, 32, 38, 0.4);
+      color: #ffb9bf;
     }
 
     .text-muted {
-      color: rgba(230, 230, 230, 0.6) !important;
+      color: rgba(214, 223, 236, 0.6) !important;
     }
   </style>
 </head>
