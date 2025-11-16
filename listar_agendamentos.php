@@ -31,43 +31,47 @@ try {
 <h2 class="text-center mb-4">📆 Todos os Agendamentos</h2>
 
 <?php if ($agendamentos && $agendamentos->num_rows > 0): ?>
-  <div class="table-responsive shadow-sm">
-    <table class="table table-striped align-middle">
-      <thead class="table-dark text-center">
-        <tr>
-          <th>#</th>
-          <th>Cliente</th>
-          <th>Barbeiro</th>
-          <th>Serviço</th>
-          <th>Data</th>
-          <th>Hora</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody class="text-center">
-        <?php while ($row = $agendamentos->fetch_assoc()): ?>
-          <?php
-            $badge = match($row['status']) {
-              'pendente' => 'warning',
-              'confirmado' => 'primary',
-              'concluido' => 'success',
-              'cancelado' => 'danger',
-              default => 'secondary'
-            };
-            $isHoje = $row['data'] === $hoje;
-          ?>
-          <tr class="<?= $isHoje ? 'table-info' : '' ?>">
-            <td><?= $row['id_agendamento'] ?></td>
-            <td><?= htmlspecialchars($row['cliente']) ?></td>
-            <td><?= htmlspecialchars($row['barbeiro']) ?></td>
-            <td><?= htmlspecialchars($row['servico']) ?></td>
-            <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
-            <td><?= date('H:i', strtotime($row['hora'])) ?></td>
-            <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
-          </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+  <div class="card shadow-sm border-0">
+    <div class="card-body">
+      <div class="table-responsive table-scroll">
+        <table class="table table-striped align-middle mb-0">
+          <thead>
+            <tr class="text-center">
+              <th>#</th>
+              <th>Cliente</th>
+              <th>Barbeiro</th>
+              <th>Serviço</th>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody class="text-center">
+            <?php while ($row = $agendamentos->fetch_assoc()): ?>
+              <?php
+                $badge = match($row['status']) {
+                  'pendente' => 'warning',
+                  'confirmado' => 'primary',
+                  'concluido' => 'success',
+                  'cancelado' => 'danger',
+                  default => 'secondary'
+                };
+                $isHoje = $row['data'] === $hoje;
+              ?>
+              <tr class="<?= $isHoje ? 'table-info' : '' ?>">
+                <td><?= $row['id_agendamento'] ?></td>
+                <td><?= htmlspecialchars($row['cliente']) ?></td>
+                <td><?= htmlspecialchars($row['barbeiro']) ?></td>
+                <td><?= htmlspecialchars($row['servico']) ?></td>
+                <td><?= date('d/m/Y', strtotime($row['data'])) ?></td>
+                <td><?= date('H:i', strtotime($row['hora'])) ?></td>
+                <td><span class="badge bg-<?= $badge ?>"><?= ucfirst($row['status']) ?></span></td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 <?php elseif ($agendamentos === false): ?>
   <div class="alert alert-danger text-center">Não foi possível carregar os agendamentos no momento.</div>

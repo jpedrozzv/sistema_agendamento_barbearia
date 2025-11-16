@@ -71,34 +71,8 @@ if (isset($_POST['__action']) && $_POST['__action'] === 'redefinir_senha') {
     }
 }
 
-$result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
+result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
 ?>
-
-<style>
-  .clientes-observacao {
-    max-width: 260px;
-  }
-
-  @media (max-width: 575.98px) {
-    .clientes-observacao {
-      max-width: 180px;
-    }
-  }
-
-  .table-action-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 575.98px) {
-    .table-action-group .btn {
-      flex: 1 1 48%;
-    }
-  }
-</style>
 
 <div class="container mt-4">
   <h2 class="text-center mb-4">👥 Gerenciar Clientes</h2>
@@ -106,14 +80,14 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
   <?php if ($result->num_rows > 0): ?>
     <div class="card shadow-sm border-0">
       <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive table-scroll">
           <table class="table table-striped table-hover align-middle mb-0">
-            <thead class="table-dark text-center">
+            <thead class="text-center">
               <tr class="text-nowrap">
                 <th scope="col" class="text-start">Nome</th>
                 <th scope="col">Telefone</th>
                 <th scope="col">Email</th>
-                <th scope="col" class="text-start clientes-observacao">Observações</th>
+                <th scope="col" class="text-start table-note-col">Observações</th>
                 <th scope="col" class="text-center">Ações</th>
               </tr>
             </thead>
@@ -126,9 +100,9 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
                   </td>
                   <td class="text-nowrap"><?= htmlspecialchars($row['telefone']) ?></td>
                   <td class="text-break"><?= htmlspecialchars($row['email']) ?></td>
-                  <td class="text-start clientes-observacao">
+                  <td class="text-start table-note-col">
                     <?php if ($observacaoCliente !== ''): ?>
-                      <span class="d-inline-block text-break" style="max-height: 3.75rem; overflow: hidden;" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($observacaoCliente) ?>">
+                      <span class="d-inline-block text-break clamp-2" data-bs-toggle="tooltip" data-bs-placement="top" title="<?= htmlspecialchars($observacaoCliente) ?>">
                         <?= htmlspecialchars($observacaoCliente) ?>
                       </span>
                     <?php else: ?>

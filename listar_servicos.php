@@ -67,34 +67,8 @@ if (isset($_POST['__action']) && $_POST['__action'] === 'remover_servico') {
 }
 
 // --- BUSCAR SERVIÇOS ---
-$result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
+result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
 ?>
-
-<style>
-  .servicos-descricao {
-    max-width: 260px;
-  }
-
-  @media (max-width: 575.98px) {
-    .servicos-descricao {
-      max-width: 180px;
-    }
-  }
-
-  .table-action-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 575.98px) {
-    .table-action-group .btn {
-      flex: 1 1 48%;
-    }
-  }
-</style>
 
 <div class="container mt-4">
   <h2 class="text-center mb-4">✂️ Gerenciar Serviços</h2>
@@ -126,11 +100,11 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
   <?php if ($result->num_rows > 0): ?>
     <div class="card shadow-sm border-0">
       <div class="card-body">
-        <div class="table-responsive">
+        <div class="table-responsive table-scroll">
           <table class="table table-striped table-hover align-middle mb-0">
-            <thead class="table-dark">
+            <thead>
               <tr class="text-center text-nowrap">
-                <th scope="col" class="text-start servicos-descricao">Serviço</th>
+                <th scope="col" class="text-start table-note-col">Serviço</th>
                 <th scope="col">Preço</th>
                 <th scope="col">Duração</th>
                 <th scope="col" class="text-center" style="width: 140px;">Ações</th>
@@ -139,8 +113,8 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
             <tbody class="text-center">
               <?php while ($row = $result->fetch_assoc()): ?>
                 <tr>
-                  <td class="text-start fw-semibold servicos-descricao">
-                    <span class="d-inline-block text-break" style="max-height: 3.75rem; overflow: hidden;"
+                  <td class="text-start fw-semibold table-note-col">
+                    <span class="d-inline-block text-break clamp-2"
                           data-bs-toggle="tooltip"
                           data-bs-placement="top"
                           title="<?= htmlspecialchars($row['descricao']) ?>">

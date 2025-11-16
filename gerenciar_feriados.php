@@ -80,38 +80,44 @@ $feriados = $conn->query("SELECT * FROM Feriado ORDER BY data ASC");
 
   <!-- Tabela de feriados -->
   <?php if ($feriados->num_rows > 0): ?>
-    <table class="table table-bordered table-hover shadow-sm align-middle">
-      <thead class="table-dark text-center">
-        <tr>
-          <th>Data</th>
-          <th>Descrição</th>
-          <th>Ações</th>
-        </tr>
-      </thead>
-      <tbody class="text-center">
-        <?php while($f = $feriados->fetch_assoc()): ?>
-          <tr>
-            <td><?= date('d/m/Y', strtotime($f['data'])) ?></td>
-            <td><?= htmlspecialchars($f['descricao']) ?></td>
-            <td>
-              <form id="formRemove<?= $f['id_feriado'] ?>" method="POST" class="d-inline">
-                <input type="hidden" name="__action" value="remove_feriado">
-                <input type="hidden" name="__id" value="<?= $f['id_feriado'] ?>">
-              </form>
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <div class="table-responsive table-scroll">
+          <table class="table table-hover align-middle mb-0 text-center">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php while($f = $feriados->fetch_assoc()): ?>
+                <tr>
+                  <td><?= date('d/m/Y', strtotime($f['data'])) ?></td>
+                  <td><?= htmlspecialchars($f['descricao']) ?></td>
+                  <td>
+                    <form id="formRemove<?= $f['id_feriado'] ?>" method="POST" class="d-inline">
+                      <input type="hidden" name="__action" value="remove_feriado">
+                      <input type="hidden" name="__id" value="<?= $f['id_feriado'] ?>">
+                    </form>
 
-              <button
-                class="btn btn-sm btn-danger"
-                data-confirm="remove_feriado"
-                data-id="<?= $f['id_feriado'] ?>"
-                data-form="formRemove<?= $f['id_feriado'] ?>"
-                data-text="Deseja realmente remover o feriado <strong><?= htmlspecialchars($f['descricao']) ?></strong> do dia <strong><?= date('d/m/Y', strtotime($f['data'])) ?></strong>?">
-                <i class="bi bi-trash"></i>
-              </button>
-            </td>
-          </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+                    <button
+                      class="btn btn-sm btn-danger"
+                      data-confirm="remove_feriado"
+                      data-id="<?= $f['id_feriado'] ?>"
+                      data-form="formRemove<?= $f['id_feriado'] ?>"
+                      data-text="Deseja realmente remover o feriado <strong><?= htmlspecialchars($f['descricao']) ?></strong> do dia <strong><?= date('d/m/Y', strtotime($f['data'])) ?></strong>?">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   <?php else: ?>
     <div class="alert alert-warning text-center">Nenhum feriado cadastrado.</div>
   <?php endif; ?>
