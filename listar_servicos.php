@@ -80,6 +80,20 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
       max-width: 180px;
     }
   }
+
+  .table-action-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 575.98px) {
+    .table-action-group .btn {
+      flex: 1 1 48%;
+    }
+  }
 </style>
 
 <div class="container mt-4">
@@ -90,17 +104,17 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
     <div class="card-body">
       <h5 class="mb-3"><i class="bi bi-plus-circle"></i> Adicionar Novo Serviço</h5>
       <form method="POST" class="row g-3">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4">
           <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="number" step="0.01" name="preco" class="form-control" placeholder="Preço (R$)" required>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
           <input type="number" name="duracao" class="form-control" placeholder="Duração (min)" required>
         </div>
-        <div class="col-md-2">
-          <button type="submit" name="adicionar" class="btn btn-success w-100">
+        <div class="col-12 col-md-2 d-grid">
+          <button type="submit" name="adicionar" class="btn btn-success">
             <i class="bi bi-check-circle"></i> Adicionar
           </button>
         </div>
@@ -136,7 +150,7 @@ $result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
                   <td class="text-nowrap">R$ <?= number_format($row['preco'], 2, ',', '.') ?></td>
                   <td class="text-nowrap"><?= $row['duracao'] ?> min</td>
                   <td class="text-center">
-                    <div class="d-flex justify-content-center gap-2">
+                    <div class="table-action-group">
                       <!-- Botão Editar -->
                       <button class="btn btn-sm btn-warning"
                               data-bs-toggle="modal"

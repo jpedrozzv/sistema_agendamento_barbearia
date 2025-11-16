@@ -51,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
@@ -165,12 +166,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       background: rgba(21, 43, 72, 0.6);
       border: 1px solid rgba(54, 107, 171, 0.45);
       color: #9fc4ff;
+      min-height: 48px;
     }
 
     .form-control {
       background-color: rgba(10, 15, 24, 0.85);
       border: 1px solid rgba(54, 107, 171, 0.3);
       color: #f5f5f5;
+      min-height: 48px;
     }
 
     .form-control:focus {
@@ -222,6 +225,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     .text-muted {
       color: rgba(214, 223, 236, 0.6) !important;
+    }
+
+    @media (max-width: 575.98px) {
+      .login-wrapper { padding: 1.5rem 1rem; }
+      .login-card { padding: 2.5rem 1.75rem; border-radius: 1.15rem; }
+      .brand-area h1 { font-size: 1.6rem; }
+      .brand-area span { letter-spacing: 0.28em; font-size: 0.85rem; }
+      .btn-login { padding: 1rem; font-size: 0.95rem; }
+      .input-group-text { min-height: 46px; }
+      .form-control { min-height: 46px; }
     }
   </style>
 </head>

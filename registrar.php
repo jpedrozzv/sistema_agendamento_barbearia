@@ -30,16 +30,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Registrar - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .auth-wrapper {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
+    }
+
+    .auth-card {
+      border-radius: 1rem;
+    }
+
+    .auth-card .form-control,
+    .auth-card .btn {
+      min-height: 48px;
+    }
+
+    @media (max-width: 575.98px) {
+      .auth-wrapper {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+      }
+
+      .auth-card {
+        padding: 1.5rem 1.25rem !important;
+      }
+    }
+  </style>
 </head>
 <body class="bg-light">
 
-<div class="container mt-5">
+<div class="container auth-wrapper">
   <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow-sm">
-        <div class="card-body">
+    <div class="col-12 col-sm-9 col-md-7 col-lg-5">
+      <div class="card shadow-sm auth-card">
+        <div class="card-body p-4">
           <h3 class="text-center">Criar Conta</h3>
           <?php if (isset($msg)) echo "<div class='alert alert-info'>$msg</div>"; ?>
           <form method="POST">

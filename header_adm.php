@@ -9,12 +9,45 @@ include_once "alerta.php";         // função mostrarAlerta()
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barbearia La Mafia — Painel Admin</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
   <style>
+    :root {
+      color-scheme: light;
+    }
+
     .modal-confirm .modal-header { border-bottom: 0; }
     .modal-confirm .modal-footer { border-top: 0; }
+
+    .navbar .container-fluid {
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .navbar .navbar-brand {
+      white-space: normal;
+      line-height: 1.2;
+    }
+
+    .navbar .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+    }
+
+    @media (max-width: 575.98px) {
+      .navbar .navbar-brand strong { display: block; }
+      .navbar .d-flex { width: 100%; justify-content: flex-start; }
+      .navbar .btn { width: 100%; }
+      .navbar .btn-sm { padding: 0.55rem 0.75rem; font-size: 0.95rem; }
+      .container { padding-left: 1rem; padding-right: 1rem; }
+      .card-body > .table-responsive { margin: 0 -1rem; padding: 0 1rem; }
+      .card-body > .table-responsive::-webkit-scrollbar { height: 6px; }
+      .card-body > .table-responsive::-webkit-scrollbar-thumb { background-color: rgba(0, 0, 0, 0.2); border-radius: 999px; }
+    }
   </style>
 </head>
 <body class="bg-light">
