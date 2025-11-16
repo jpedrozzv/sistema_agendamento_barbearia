@@ -58,34 +58,6 @@ $barbeiros = $conn->query("SELECT id_barbeiro, nome FROM Barbeiro ORDER BY nome 
 $servicos = $conn->query("SELECT id_servico, descricao, preco, duracao FROM Servico ORDER BY descricao ASC");
 ?>
 
-<style>
-  .form-actions-responsive {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    align-items: stretch;
-    justify-content: center;
-    text-align: center;
-  }
-
-  .form-actions-responsive .btn {
-    width: 100%;
-  }
-
-  @media (min-width: 576px) {
-    .form-actions-responsive {
-      flex-direction: row;
-      align-items: center;
-      text-align: center;
-    }
-
-    .form-actions-responsive .btn {
-      width: auto;
-      min-width: 220px;
-    }
-  }
-</style>
-
 <div class="container mt-4">
   <h2 class="text-center mb-4">💈 Novo Agendamento</h2>
 
@@ -141,7 +113,7 @@ $servicos = $conn->query("SELECT id_servico, descricao, preco, duracao FROM Serv
       </div>
     </div>
 
-    <div class="form-actions-responsive mt-4">
+    <div class="form-actions mt-4">
       <button type="submit" class="btn btn-success px-4">
         <i class="bi bi-check-circle"></i> Confirmar Agendamento
       </button>

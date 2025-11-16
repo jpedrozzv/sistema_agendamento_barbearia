@@ -75,49 +75,6 @@ $stmtLista->execute();
 $result = $stmtLista->get_result();
 ?>
 
-<style>
-  .agendamentos-table-wrapper {
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-
-  .agendamentos-table-wrapper .table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background-color: var(--bs-table-bg);
-  }
-
-  .clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: normal;
-  }
-
-  .table-action-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  @media (max-width: 575.98px) {
-    .agendamentos-table-wrapper {
-      margin-left: -1rem;
-      margin-right: -1rem;
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .table-action-group .btn {
-      flex: 1 1 48%;
-    }
-  }
-</style>
-
 <div class="container mt-4">
   <h2 class="text-center mb-4">📅 Lista de Agendamentos</h2>
 
@@ -126,9 +83,9 @@ $result = $stmtLista->get_result();
   <?php if ($result->num_rows > 0): ?>
     <div class="card shadow-sm border-0">
       <div class="card-body">
-        <div class="agendamentos-table-wrapper table-responsive">
+        <div class="table-responsive table-scroll">
           <table class="table table-striped table-hover align-middle mb-0">
-            <thead class="table-light">
+            <thead>
               <tr class="text-nowrap text-center">
                 <th scope="col">Cliente</th>
                 <th scope="col">Barbeiro</th>

@@ -48,55 +48,6 @@ $stmt->execute();
 $result = $stmt->get_result();
 ?>
 
-<style>
-  .meus-agendamentos-table-wrapper {
-    max-height: 70vh;
-    overflow-y: auto;
-  }
-
-  .meus-agendamentos-table-wrapper .table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background-color: var(--bs-table-bg);
-  }
-
-  .clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    white-space: normal;
-  }
-
-  @media (max-width: 576px) {
-    .meus-agendamentos-table-wrapper {
-      max-height: none;
-    }
-  }
-
-  .table-action-group {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  @media (max-width: 575.98px) {
-    .meus-agendamentos-table-wrapper {
-      margin-left: -1rem;
-      margin-right: -1rem;
-      padding-left: 1rem;
-      padding-right: 1rem;
-    }
-
-    .table-action-group .btn {
-      flex: 1 1 48%;
-    }
-  }
-</style>
-
 <div class="container mt-4">
   <h2 class="text-center mb-4">📅 Meus Agendamentos</h2>
 
@@ -105,9 +56,9 @@ $result = $stmt->get_result();
   <?php if ($result->num_rows > 0): ?>
     <div class="card shadow-sm border-0">
       <div class="card-body">
-        <div class="meus-agendamentos-table-wrapper table-responsive">
+        <div class="table-responsive table-scroll">
           <table class="table table-striped table-hover align-middle mb-0">
-            <thead class="table-light">
+            <thead>
               <tr class="text-center text-nowrap">
                 <th scope="col">Data</th>
                 <th scope="col">Horário</th>

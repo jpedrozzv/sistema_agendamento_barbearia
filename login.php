@@ -55,178 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <title>Login - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
-  <style>
-    body {
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Montserrat', sans-serif;
-      background: radial-gradient(circle at top left, rgba(22, 40, 66, 0.55), transparent 60%),
-                  radial-gradient(circle at bottom right, rgba(3, 9, 19, 0.85), #050608 80%);
-      background-color: #050608;
-      color: #f5f5f5;
-    }
-
-    .auth-wrapper {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
-    }
-
-    .auth-card {
-      background: linear-gradient(150deg, rgba(11, 14, 22, 0.95), rgba(9, 22, 39, 0.95));
-      border-radius: 1.25rem;
-      border: 1px solid rgba(54, 107, 171, 0.35);
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
-      overflow: hidden;
-      max-width: 480px;
-      width: 100%;
-      padding: 3rem 2.75rem;
-      position: relative;
-    }
-
-    .auth-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(54, 107, 171, 0.2), transparent 55%);
-      pointer-events: none;
-    }
-
-    .auth-card::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: 1.2rem;
-      height: 100%;
-      width: 6px;
-      background: repeating-linear-gradient(
-        180deg,
-        #0f1e33,
-        #0f1e33 10px,
-        #ffffff 10px,
-        #ffffff 20px,
-        #b32026 20px,
-        #b32026 30px
-      );
-      opacity: 0.25;
-      filter: blur(0.5px);
-    }
-
-    .brand-area {
-      text-align: center;
-      margin-bottom: 2rem;
-      position: relative;
-      z-index: 2;
-    }
-
-    .brand-area .brand-icon {
-      width: 68px;
-      height: 68px;
-      border-radius: 50%;
-      background: linear-gradient(145deg, rgba(54, 107, 171, 0.35), rgba(5, 11, 20, 0.95));
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 1rem;
-      font-size: 2rem;
-      color: #c5ddff;
-      border: 1px solid rgba(81, 142, 213, 0.4);
-      box-shadow: inset 0 0 12px rgba(11, 24, 40, 0.9);
-    }
-
-    .brand-area h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.9rem;
-      margin-bottom: 0.25rem;
-      letter-spacing: 0.05em;
-      color: #ebf4ff;
-    }
-
-    .brand-area span {
-      font-size: 0.95rem;
-      color: rgba(197, 213, 237, 0.75);
-      text-transform: uppercase;
-      letter-spacing: 0.35em;
-      font-weight: 600;
-      display: inline-block;
-      padding-top: 0.25rem;
-    }
-
-    .brand-area p {
-      color: rgba(214, 223, 236, 0.8);
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
-    }
-
-    label.form-label {
-      font-weight: 600;
-      color: rgba(229, 236, 246, 0.85);
-      position: relative;
-      z-index: 2;
-    }
-
-    .form-control {
-      background-color: rgba(10, 15, 24, 0.85);
-      border: 1px solid rgba(54, 107, 171, 0.3);
-      color: #f5f5f5;
-      min-height: 48px;
-    }
-
-    .form-control:focus {
-      background-color: rgba(13, 22, 35, 0.95);
-      border-color: rgba(126, 173, 232, 0.65);
-      box-shadow: 0 0 0 0.2rem rgba(54, 107, 171, 0.25);
-      color: #fff;
-    }
-
-    .btn-register {
-      background: linear-gradient(140deg, #1e3a5c, #10213a 55%, #1f4f82);
-      border: 1px solid rgba(88, 146, 214, 0.45);
-      color: #f5f8ff;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 0.9rem 1rem;
-      border-radius: 0.9rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      position: relative;
-      z-index: 2;
-      box-shadow: 0 18px 32px rgba(9, 21, 36, 0.55);
-    }
-
-    .btn-register:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 25px 40px rgba(6, 16, 29, 0.75);
-      filter: brightness(1.05);
-    }
-
-    .auth-card .helper-text {
-      color: rgba(210, 220, 237, 0.85);
-      font-size: 0.95rem;
-    }
-
-    .alert-feedback {
-      border-radius: 0.75rem;
-      font-weight: 600;
-      position: relative;
-      z-index: 2;
-    }
-
-    @media (max-width: 575.98px) {
-      .auth-card {
-        padding: 2.5rem 1.75rem;
-      }
-
-      .brand-area h1 {
-        font-size: 1.65rem;
-      }
-    }
-  </style>
+  <link href="css/style.css" rel="stylesheet">
 </head>
-<body>
+<body class="auth-page">
 
 <main class="auth-wrapper">
   <div class="auth-card">
@@ -234,13 +65,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       <div class="brand-icon">
         <i class="bi bi-scissors"></i>
       </div>
-      <span>Barbearia La Mafia</span>
+      <span class="text-uppercase text-muted small">Barbearia La Mafia</span>
       <h1>Entrar</h1>
-      <p>Acesse sua conta para gerenciar seus agendamentos</p>
+      <p class="mb-0">Acesse para gerenciar horários e clientes.</p>
     </div>
 
     <?php if (!empty($erro)): ?>
-      <div class="alert alert-danger alert-feedback" role="alert">
+      <div class="alert alert-danger" role="alert">
         <?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
       </div>
     <?php endif; ?>
@@ -254,10 +85,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <label class="form-label" for="senha">Senha</label>
         <input type="password" id="senha" name="senha" class="form-control" placeholder="Digite sua senha" required>
       </div>
-      <button type="submit" class="btn btn-register w-100">Entrar</button>
+      <button type="submit" class="btn btn-primary w-100">Entrar</button>
     </form>
 
-    <p class="text-center mt-4 mb-0 helper-text">
+    <p class="text-center mt-4 mb-0 text-muted">
       Ainda não tem conta?
       <a class="fw-semibold" href="cadastro_cliente.php">Cadastre-se para começar</a>
     </p>
