@@ -95,6 +95,27 @@ $result = $stmtLista->get_result();
     overflow: hidden;
     white-space: normal;
   }
+
+  .table-action-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 575.98px) {
+    .agendamentos-table-wrapper {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .table-action-group .btn {
+      flex: 1 1 48%;
+    }
+  }
 </style>
 
 <div class="container mt-4">
@@ -166,7 +187,7 @@ $result = $stmtLista->get_result();
                     <?php endif; ?>
                   </td>
                   <td class="text-center text-nowrap" style="width: 110px;">
-                    <div class="d-flex justify-content-center gap-2">
+                    <div class="table-action-group">
                       <form method="POST" class="d-inline">
                         <input type="hidden" name="__action" value="editar_agendamento">
                         <input type="hidden" name="__id" value="<?= $row['id_agendamento'] ?>">

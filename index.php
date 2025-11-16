@@ -25,11 +25,34 @@ $agendamentos = $conn->query("
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Barbearia - Sistema de Agendamento</title>
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    .quick-actions .card {
+      border-radius: 1rem;
+      min-height: 100%;
+    }
+
+    .quick-actions .btn {
+      min-height: 48px;
+    }
+
+    .table-responsive.shadow-frame {
+      border-radius: 0.75rem;
+      overflow: hidden;
+    }
+
+    @media (max-width: 575.98px) {
+      .navbar-brand { white-space: normal; }
+      .quick-actions { row-gap: 1.5rem; }
+      .table-responsive { margin-left: -1rem; margin-right: -1rem; padding-left: 1rem; padding-right: 1rem; }
+      .table-responsive.shadow-frame { border-radius: 0.75rem; }
+    }
+  </style>
 </head>
 <body class="bg-light">
 
@@ -52,14 +75,14 @@ $agendamentos = $conn->query("
 </nav>
 
 <!-- Conteúdo principal -->
-<div class="container mt-5">
+<div class="container py-4 py-lg-5">
   <div class="text-center">
     <h1 class="mb-4">Sistema de Agendamento - Barbearia La Mafia</h1>
     <p class="lead">Gerencie seus clientes e agendamentos de forma simples e rápida.</p>
   </div>
 
-  <div class="row mt-5">
-    <div class="col-md-3">
+  <div class="row quick-actions mt-5 g-4">
+    <div class="col-12 col-sm-6 col-lg-3 d-flex">
       <div class="card shadow-sm text-center p-3">
         <i class="bi bi-person-plus display-4 text-success"></i>
         <h5 class="card-title mt-2">Cadastrar Cliente</h5>
@@ -68,7 +91,7 @@ $agendamentos = $conn->query("
       </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3 d-flex">
       <div class="card shadow-sm text-center p-3">
         <i class="bi bi-calendar-plus display-4 text-primary"></i>
         <h5 class="card-title mt-2">Novo Agendamento</h5>
@@ -77,7 +100,7 @@ $agendamentos = $conn->query("
       </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3 d-flex">
       <div class="card shadow-sm text-center p-3">
         <i class="bi bi-list-check display-4 text-dark"></i>
         <h5 class="card-title mt-2">Lista de Agendamentos</h5>
@@ -86,7 +109,7 @@ $agendamentos = $conn->query("
       </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-12 col-sm-6 col-lg-3 d-flex">
       <div class="card shadow-sm text-center p-3">
         <i class="bi bi-people display-4 text-secondary"></i>
         <h5 class="card-title mt-2">Lista de Clientes</h5>
@@ -100,26 +123,28 @@ $agendamentos = $conn->query("
   <div class="mt-5">
     <h3><i class="bi bi-people"></i> Últimos Clientes Cadastrados</h3>
     <?php if ($clientes->num_rows > 0): ?>
-      <table class="table table-bordered table-hover shadow-sm mt-3">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Telefone</th>
-            <th>Email</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php while($c = $clientes->fetch_assoc()): ?>
+      <div class="table-responsive shadow-frame mt-3">
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="table-dark">
             <tr>
-              <td><?= $c['id_cliente'] ?></td>
-              <td><?= $c['nome'] ?></td>
-              <td><?= $c['telefone'] ?></td>
-              <td><?= $c['email'] ?></td>
+              <th>ID</th>
+              <th>Nome</th>
+              <th>Telefone</th>
+              <th>Email</th>
             </tr>
-          <?php endwhile; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php while($c = $clientes->fetch_assoc()): ?>
+              <tr>
+                <td><?= $c['id_cliente'] ?></td>
+                <td><?= $c['nome'] ?></td>
+                <td><?= $c['telefone'] ?></td>
+                <td><?= $c['email'] ?></td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
       <a href="listar_clientes.php" class="btn btn-secondary">Ver todos os clientes</a>
     <?php else: ?>
       <div class="alert alert-warning mt-3">Nenhum cliente cadastrado ainda.</div>
@@ -130,39 +155,41 @@ $agendamentos = $conn->query("
   <div class="mt-5">
     <h3><i class="bi bi-calendar-check"></i> Últimos Agendamentos</h3>
     <?php if ($agendamentos->num_rows > 0): ?>
-      <table class="table table-bordered table-hover shadow-sm mt-3">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Cliente</th>
-            <th>Serviço</th>
-            <th>Data</th>
-            <th>Hora</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <?php while($a = $agendamentos->fetch_assoc()): ?>
+      <div class="table-responsive shadow-frame mt-3">
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="table-dark">
             <tr>
-              <td><?= $a['id_agendamento'] ?></td>
-              <td><?= $a['cliente'] ?></td>
-              <td><?= $a['servico'] ?></td>
-              <td><?= date('d/m/Y', strtotime($a['data'])) ?></td>
-              <td><?= date('H:i', strtotime($a['hora'])) ?></td>
-              <td>
-                <?php
-                  $badge = "secondary";
-                  if ($a['status'] == "pendente") $badge = "warning";
-                  if ($a['status'] == "confirmado") $badge = "primary";
-                  if ($a['status'] == "concluido") $badge = "success";
-                  if ($a['status'] == "cancelado") $badge = "danger";
-                ?>
-                <span class="badge bg-<?= $badge ?>"><?= ucfirst($a['status']) ?></span>
-              </td>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Serviço</th>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Status</th>
             </tr>
-          <?php endwhile; ?>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <?php while($a = $agendamentos->fetch_assoc()): ?>
+              <tr>
+                <td><?= $a['id_agendamento'] ?></td>
+                <td><?= $a['cliente'] ?></td>
+                <td><?= $a['servico'] ?></td>
+                <td><?= date('d/m/Y', strtotime($a['data'])) ?></td>
+                <td><?= date('H:i', strtotime($a['hora'])) ?></td>
+                <td>
+                  <?php
+                    $badge = "secondary";
+                    if ($a['status'] == "pendente") $badge = "warning";
+                    if ($a['status'] == "confirmado") $badge = "primary";
+                    if ($a['status'] == "concluido") $badge = "success";
+                    if ($a['status'] == "cancelado") $badge = "danger";
+                  ?>
+                  <span class="badge bg-<?= $badge ?>"><?= ucfirst($a['status']) ?></span>
+                </td>
+              </tr>
+            <?php endwhile; ?>
+          </tbody>
+        </table>
+      </div>
       <a href="listar_agendamentos.php" class="btn btn-secondary">Ver todos os agendamentos</a>
     <?php else: ?>
       <div class="alert alert-warning mt-3">Nenhum agendamento registrado ainda.</div>
