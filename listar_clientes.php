@@ -71,7 +71,7 @@ if (isset($_POST['__action']) && $_POST['__action'] === 'redefinir_senha') {
     }
 }
 
-result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
+$result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
 ?>
 
 <div class="container mt-4">
