@@ -54,27 +54,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
   <style>
     body {
-      min-height: 100vh;
-      margin: 0;
-      font-family: 'Montserrat', sans-serif;
-      background: radial-gradient(circle at top left, rgba(22, 40, 66, 0.55), transparent 60%),
-                  radial-gradient(circle at bottom right, rgba(3, 9, 19, 0.85), #050608 80%);
-      background-color: #050608;
-      color: #f5f5f5;
+      background-color: #f8f9fa;
     }
 
-    .login-wrapper {
+    .auth-wrapper {
+      padding-top: 3rem;
+      padding-bottom: 3rem;
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
     }
 
+<<<<<<< HEAD
     .login-card {
       background: linear-gradient(150deg, rgba(11, 14, 22, 0.95), rgba(9, 22, 39, 0.95));
       border-radius: 1.25rem;
@@ -85,199 +78,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       width: 100%;
       padding: 3rem 2.75rem;
       position: relative;
+=======
+    .auth-card {
+      border-radius: 1rem;
+>>>>>>> 423585d73d45605d193333d1e7a7f3414607083c
     }
 
-    .login-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at top right, rgba(54, 107, 171, 0.2), transparent 55%);
-      pointer-events: none;
+    .auth-card .form-control,
+    .auth-card .btn {
+      min-height: 48px;
     }
 
-    .login-card::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: 1.2rem;
-      height: 100%;
-      width: 6px;
-      background: repeating-linear-gradient(
-        180deg,
-        #0f1e33,
-        #0f1e33 10px,
-        #ffffff 10px,
-        #ffffff 20px,
-        #b32026 20px,
-        #b32026 30px
-      );
-      opacity: 0.25;
-      filter: blur(0.5px);
-    }
-
-    .brand-area {
-      text-align: center;
-      margin-bottom: 2rem;
-      position: relative;
-      z-index: 2;
-    }
-
-    .brand-area .brand-icon {
-      width: 68px;
-      height: 68px;
+    .brand-icon {
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
-      background: linear-gradient(145deg, rgba(54, 107, 171, 0.35), rgba(5, 11, 20, 0.95));
-      display: flex;
+      background-color: rgba(25, 135, 84, 0.1);
+      color: #198754;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto 1rem;
-      font-size: 2rem;
-      color: #c5ddff;
-      border: 1px solid rgba(81, 142, 213, 0.4);
-      box-shadow: inset 0 0 12px rgba(11, 24, 40, 0.9);
-    }
-
-    .brand-area h1 {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.9rem;
-      margin-bottom: 0.25rem;
-      letter-spacing: 0.05em;
-      color: #ebf4ff;
-    }
-
-    .brand-area span {
-      font-size: 0.95rem;
-      color: rgba(197, 213, 237, 0.75);
-      text-transform: uppercase;
-      letter-spacing: 0.35em;
-      font-weight: 600;
-      display: inline-block;
-      padding-top: 0.25rem;
-    }
-
-    label.form-label {
-      font-weight: 600;
-      color: rgba(229, 236, 246, 0.85);
-      position: relative;
-      z-index: 2;
-    }
-
-    .input-group-text {
-      background: rgba(21, 43, 72, 0.6);
-      border: 1px solid rgba(54, 107, 171, 0.45);
-      color: #9fc4ff;
-      min-height: 48px;
-    }
-
-    .form-control {
-      background-color: rgba(10, 15, 24, 0.85);
-      border: 1px solid rgba(54, 107, 171, 0.3);
-      color: #f5f5f5;
-      min-height: 48px;
-    }
-
-    .form-control:focus {
-      background-color: rgba(13, 22, 35, 0.95);
-      border-color: rgba(126, 173, 232, 0.65);
-      box-shadow: 0 0 0 0.2rem rgba(54, 107, 171, 0.25);
-      color: #fff;
-    }
-
-    .btn-login {
-      background: linear-gradient(140deg, #1e3a5c, #10213a 55%, #1f4f82);
-      border: 1px solid rgba(88, 146, 214, 0.45);
-      color: #f5f8ff;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      padding: 0.9rem 1rem;
-      border-radius: 0.9rem;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-      position: relative;
-      z-index: 2;
-      box-shadow: 0 18px 32px rgba(9, 21, 36, 0.55);
-    }
-
-    .btn-login:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.08);
-      box-shadow: 0 22px 38px rgba(7, 15, 26, 0.65);
-    }
-
-    .signup-link {
-      color: rgba(146, 187, 240, 0.9);
-      font-weight: 500;
-      text-decoration: none;
-    }
-
-    .signup-link:hover {
-      color: #a9c8ff;
-      text-decoration: underline;
-    }
-
-    .alert {
-      border-radius: 0.75rem;
-      font-weight: 500;
-      background-color: rgba(179, 32, 38, 0.18);
-      border-color: rgba(179, 32, 38, 0.4);
-      color: #ffb9bf;
-    }
-
-    .text-muted {
-      color: rgba(214, 223, 236, 0.6) !important;
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
     }
 
     @media (max-width: 575.98px) {
-      .login-wrapper { padding: 1.5rem 1rem; }
-      .login-card { padding: 2.5rem 1.75rem; border-radius: 1.15rem; }
-      .brand-area h1 { font-size: 1.6rem; }
-      .brand-area span { letter-spacing: 0.28em; font-size: 0.85rem; }
-      .btn-login { padding: 1rem; font-size: 0.95rem; }
-      .input-group-text { min-height: 46px; }
-      .form-control { min-height: 46px; }
+      .auth-wrapper {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+      }
+
+      .auth-card {
+        padding: 1.5rem 1.25rem !important;
+      }
     }
   </style>
 </head>
-<body>
+<body class="bg-light">
 
-<div class="login-wrapper">
-  <div class="login-card position-relative">
-    <div class="brand-area">
-      <div class="brand-icon">
-        <i class="bi bi-scissors"></i>
-      </div>
-      <h1>Barbearia La Mafia</h1>
-      <span>Bem-vindo</span>
-    </div>
+<div class="container auth-wrapper">
+  <div class="row justify-content-center w-100">
+    <div class="col-12 col-sm-9 col-md-7 col-lg-5">
+      <div class="card shadow-sm auth-card">
+        <div class="card-body p-4">
+          <div class="text-center mb-4">
+            <div class="brand-icon">
+              <span class="fw-semibold">LM</span>
+            </div>
+            <h3 class="mb-1">Bem-vindo de volta</h3>
+            <p class="text-muted mb-0">Faça login para continuar</p>
+          </div>
 
-    <?php if (isset($erro)): ?>
-      <div class="alert alert-danger" role="alert"><?= $erro ?></div>
-    <?php endif; ?>
+          <?php if (isset($erro)) echo "<div class='alert alert-danger'>$erro</div>"; ?>
 
-    <form method="POST" class="position-relative z-2">
-      <div class="mb-3">
-        <label for="email" class="form-label">E-mail</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-person"></i></span>
-          <input type="email" id="email" name="email" class="form-control" placeholder="seuemail@exemplo.com" required>
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label" for="email">E-mail</label>
+              <input type="email" id="email" name="email" class="form-control" placeholder="seuemail@exemplo.com" required>
+            </div>
+            <div class="mb-4">
+              <label class="form-label" for="senha">Senha</label>
+              <input type="password" id="senha" name="senha" class="form-control" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Entrar</button>
+          </form>
+
+          <div class="text-center mt-3">
+            Ainda não tem conta? <a href="cadastro_cliente.php">Criar conta</a>
+          </div>
         </div>
       </div>
-      <div class="mb-4">
-        <label for="senha" class="form-label">Senha</label>
-        <div class="input-group">
-          <span class="input-group-text"><i class="bi bi-lock"></i></span>
-          <input type="password" id="senha" name="senha" class="form-control" placeholder="Digite sua senha" required>
-        </div>
-      </div>
-      <button type="submit" class="btn btn-login w-100">Entrar</button>
-    </form>
-
-    <div class="text-center mt-4 position-relative z-2">
-      <p class="mb-0 text-muted">Ainda não tem cadastro?</p>
-      <a href="cadastro_cliente.php" class="signup-link">Criar conta agora</a>
     </div>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
