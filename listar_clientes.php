@@ -84,6 +84,20 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
       max-width: 180px;
     }
   }
+
+  .table-action-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 575.98px) {
+    .table-action-group .btn {
+      flex: 1 1 48%;
+    }
+  }
 </style>
 
 <div class="container mt-4">
@@ -122,43 +136,45 @@ $result = $conn->query("SELECT * FROM Cliente ORDER BY id_cliente ASC");
                     <?php endif; ?>
                   </td>
                   <td>
-                    <!-- Botão Editar -->
-                    <button class="btn btn-sm btn-warning"
-                            data-bs-toggle="modal"
-                            data-bs-target="#editarModal<?= $row['id_cliente'] ?>"
-                            title="Editar cliente">
-                      <i class="bi bi-pencil"></i>
-                    </button>
+                    <div class="table-action-group">
+                      <!-- Botão Editar -->
+                      <button class="btn btn-sm btn-warning"
+                              data-bs-toggle="modal"
+                              data-bs-target="#editarModal<?= $row['id_cliente'] ?>"
+                              title="Editar cliente">
+                        <i class="bi bi-pencil"></i>
+                      </button>
 
-                    <!-- Redefinir Senha -->
-                    <form id="formSenha<?= $row['id_cliente'] ?>" method="POST" class="d-inline">
-                      <input type="hidden" name="__action" value="redefinir_senha">
-                      <input type="hidden" name="__id" value="<?= $row['id_cliente'] ?>">
-                    </form>
-                    <button
-                      class="btn btn-sm btn-secondary"
-                      data-confirm="redefinir_senha"
-                      data-id="<?= $row['id_cliente'] ?>"
-                      data-form="formSenha<?= $row['id_cliente'] ?>"
-                      data-text="Deseja redefinir a senha de <strong><?= htmlspecialchars($row['nome']) ?></strong> para <strong>1234</strong>?"
-                      title="Redefinir senha">
-                      <i class="bi bi-key"></i>
-                    </button>
+                      <!-- Redefinir Senha -->
+                      <form id="formSenha<?= $row['id_cliente'] ?>" method="POST" class="d-inline">
+                        <input type="hidden" name="__action" value="redefinir_senha">
+                        <input type="hidden" name="__id" value="<?= $row['id_cliente'] ?>">
+                      </form>
+                      <button
+                        class="btn btn-sm btn-secondary"
+                        data-confirm="redefinir_senha"
+                        data-id="<?= $row['id_cliente'] ?>"
+                        data-form="formSenha<?= $row['id_cliente'] ?>"
+                        data-text="Deseja redefinir a senha de <strong><?= htmlspecialchars($row['nome']) ?></strong> para <strong>1234</strong>?"
+                        title="Redefinir senha">
+                        <i class="bi bi-key"></i>
+                      </button>
 
-                    <!-- Remover Cliente -->
-                    <form id="formRemover<?= $row['id_cliente'] ?>" method="POST" class="d-inline">
-                      <input type="hidden" name="__action" value="remover_cliente">
-                      <input type="hidden" name="__id" value="<?= $row['id_cliente'] ?>">
-                    </form>
-                    <button
-                      class="btn btn-sm btn-danger"
-                      data-confirm="remover_cliente"
-                      data-id="<?= $row['id_cliente'] ?>"
-                      data-form="formRemover<?= $row['id_cliente'] ?>"
-                      data-text="Deseja realmente remover o cliente <strong><?= htmlspecialchars($row['nome']) ?></strong>?<br><small>Todos os agendamentos vinculados também serão excluídos.</small>"
-                      title="Remover cliente">
-                      <i class="bi bi-trash"></i>
-                    </button>
+                      <!-- Remover Cliente -->
+                      <form id="formRemover<?= $row['id_cliente'] ?>" method="POST" class="d-inline">
+                        <input type="hidden" name="__action" value="remover_cliente">
+                        <input type="hidden" name="__id" value="<?= $row['id_cliente'] ?>">
+                      </form>
+                      <button
+                        class="btn btn-sm btn-danger"
+                        data-confirm="remover_cliente"
+                        data-id="<?= $row['id_cliente'] ?>"
+                        data-form="formRemover<?= $row['id_cliente'] ?>"
+                        data-text="Deseja realmente remover o cliente <strong><?= htmlspecialchars($row['nome']) ?></strong>?<br><small>Todos os agendamentos vinculados também serão excluídos.</small>"
+                        title="Remover cliente">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
 

@@ -69,6 +69,21 @@
     background: #d9e9ff;
     color: #1f5d9d;
   }
+
+  @media (max-width: 767.98px) {
+    .dashboard-section { padding: 0 0.25rem; }
+    .dashboard-card { min-height: auto; padding: 1.25rem; }
+    .dashboard-icon {
+      width: 60px;
+      height: 60px;
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .dashboard-card { border-radius: 0.9rem; }
+  }
 </style>
 
 <div class="dashboard-section">

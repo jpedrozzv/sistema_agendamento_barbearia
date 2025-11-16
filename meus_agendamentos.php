@@ -74,6 +74,27 @@ $result = $stmt->get_result();
       max-height: none;
     }
   }
+
+  .table-action-group {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  @media (max-width: 575.98px) {
+    .meus-agendamentos-table-wrapper {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .table-action-group .btn {
+      flex: 1 1 48%;
+    }
+  }
 </style>
 
 <div class="container mt-4">
@@ -160,7 +181,7 @@ $result = $stmt->get_result();
                     <?php endif; ?>
                   </td>
                   <td class="text-center text-nowrap" style="width: 140px;">
-                    <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                    <div class="table-action-group">
                       <button
                         type="button"
                         class="btn btn-sm btn-outline-primary ver-detalhes-btn"
