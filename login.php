@@ -60,9 +60,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       min-height: 100vh;
       margin: 0;
       font-family: 'Montserrat', sans-serif;
-      background: radial-gradient(circle at top left, rgba(22, 40, 66, 0.55), transparent 60%),
-                  radial-gradient(circle at bottom right, rgba(3, 9, 19, 0.85), #050608 80%);
-      background-color: #050608;
+      background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.55), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.85), #efefefff 80%);
+      background-color: #ffffffff;
       color: #f5f5f5;
     }
 
@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       background: linear-gradient(150deg, rgba(11, 14, 22, 0.95), rgba(9, 22, 39, 0.95));
       border-radius: 1.25rem;
       border: 1px solid rgba(54, 107, 171, 0.35);
-      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      box-shadow: 0 25px 60px rgba(216, 213, 213, 0.65);
       overflow: hidden;
       max-width: 420px;
       width: 100%;
