@@ -67,7 +67,7 @@ if (isset($_POST['__action']) && $_POST['__action'] === 'remover_servico') {
 }
 
 // --- BUSCAR SERVIÇOS ---
-result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
+$result = $conn->query("SELECT * FROM Servico ORDER BY id_servico ASC");
 ?>
 
 <div class="container mt-4">
