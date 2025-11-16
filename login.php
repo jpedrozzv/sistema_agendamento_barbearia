@@ -54,79 +54,174 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login - Barbearia La Mafia</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --brand-dark: #0b0e16;
-      --card-radius: 1rem;
-    }
-
     body {
-      background-color: #f8f9fa;
-      font-family: "Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       min-height: 100vh;
-      color: #212529;
+      margin: 0;
+      font-family: 'Montserrat', sans-serif;
+      background: radial-gradient(circle at top left, rgba(22, 40, 66, 0.55), transparent 60%),
+                  radial-gradient(circle at bottom right, rgba(3, 9, 19, 0.85), #050608 80%);
+      background-color: #050608;
+      color: #f5f5f5;
     }
 
-    main.auth-wrapper {
+    .auth-wrapper {
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 3rem 1rem;
+      padding: 2rem 1.5rem;
     }
 
     .auth-card {
-      border-radius: var(--card-radius);
-      border: 1px solid #e9ecef;
-      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.08);
+      background: linear-gradient(150deg, rgba(11, 14, 22, 0.95), rgba(9, 22, 39, 0.95));
+      border-radius: 1.25rem;
+      border: 1px solid rgba(54, 107, 171, 0.35);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65);
+      overflow: hidden;
+      max-width: 480px;
+      width: 100%;
+      padding: 3rem 2.75rem;
+      position: relative;
     }
 
-    .auth-card .card-body {
-      padding: 2.75rem 3rem;
+    .auth-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(54, 107, 171, 0.2), transparent 55%);
+      pointer-events: none;
     }
 
-    .auth-title {
-      font-size: 1.75rem;
+    .auth-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 1.2rem;
+      height: 100%;
+      width: 6px;
+      background: repeating-linear-gradient(
+        180deg,
+        #0f1e33,
+        #0f1e33 10px,
+        #ffffff 10px,
+        #ffffff 20px,
+        #b32026 20px,
+        #b32026 30px
+      );
+      opacity: 0.25;
+      filter: blur(0.5px);
+    }
+
+    .brand-area {
+      text-align: center;
+      margin-bottom: 2rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .brand-area .brand-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(54, 107, 171, 0.35), rgba(5, 11, 20, 0.95));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+      font-size: 2rem;
+      color: #c5ddff;
+      border: 1px solid rgba(81, 142, 213, 0.4);
+      box-shadow: inset 0 0 12px rgba(11, 24, 40, 0.9);
+    }
+
+    .brand-area h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.9rem;
+      margin-bottom: 0.25rem;
+      letter-spacing: 0.05em;
+      color: #ebf4ff;
+    }
+
+    .brand-area span {
+      font-size: 0.95rem;
+      color: rgba(197, 213, 237, 0.75);
+      text-transform: uppercase;
+      letter-spacing: 0.35em;
       font-weight: 600;
-      color: var(--brand-dark);
+      display: inline-block;
+      padding-top: 0.25rem;
     }
 
-    .auth-card .form-control {
-      min-height: 48px;
-      border-radius: 0.65rem;
-      border-color: #ced4da;
-      padding: 0.65rem 0.85rem;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .brand-area p {
+      color: rgba(214, 223, 236, 0.8);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
     }
 
-    .auth-card .form-control:focus {
-      border-color: #198754;
-      box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.15);
-    }
-
-    .btn-success {
-      min-height: 48px;
-      border-radius: 0.65rem;
+    label.form-label {
       font-weight: 600;
-      box-shadow: 0 8px 20px rgba(25, 135, 84, 0.25);
+      color: rgba(229, 236, 246, 0.85);
+      position: relative;
+      z-index: 2;
     }
 
-    .btn-success:hover {
-      box-shadow: 0 12px 24px rgba(25, 135, 84, 0.35);
+    .form-control {
+      background-color: rgba(10, 15, 24, 0.85);
+      border: 1px solid rgba(54, 107, 171, 0.3);
+      color: #f5f5f5;
+      min-height: 48px;
+    }
+
+    .form-control:focus {
+      background-color: rgba(13, 22, 35, 0.95);
+      border-color: rgba(126, 173, 232, 0.65);
+      box-shadow: 0 0 0 0.2rem rgba(54, 107, 171, 0.25);
+      color: #fff;
+    }
+
+    .btn-register {
+      background: linear-gradient(140deg, #1e3a5c, #10213a 55%, #1f4f82);
+      border: 1px solid rgba(88, 146, 214, 0.45);
+      color: #f5f8ff;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.9rem 1rem;
+      border-radius: 0.9rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 18px 32px rgba(9, 21, 36, 0.55);
+    }
+
+    .btn-register:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 25px 40px rgba(6, 16, 29, 0.75);
+      filter: brightness(1.05);
+    }
+
+    .auth-card .helper-text {
+      color: rgba(210, 220, 237, 0.85);
+      font-size: 0.95rem;
     }
 
     .alert-feedback {
       border-radius: 0.75rem;
-      font-weight: 500;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
     }
 
     @media (max-width: 575.98px) {
-      .auth-card .card-body {
-        padding: 2rem 1.5rem;
+      .auth-card {
+        padding: 2.5rem 1.75rem;
       }
 
-      .auth-title {
-        font-size: 1.5rem;
+      .brand-area h1 {
+        font-size: 1.65rem;
       }
     }
   </style>
@@ -134,43 +229,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
 
 <main class="auth-wrapper">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-12 col-sm-9 col-md-7 col-lg-5">
-        <div class="card auth-card">
-          <div class="card-body">
-            <div class="text-center mb-4">
-              <p class="text-uppercase text-muted mb-1">Barbearia La Mafia</p>
-              <h1 class="auth-title mb-2">Bem-vindo de volta</h1>
-              <p class="text-muted mb-0">Acesse sua conta para continuar</p>
-            </div>
-
-            <?php if (!empty($erro)): ?>
-              <div class="alert alert-danger alert-feedback" role="alert">
-                <?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
-              </div>
-            <?php endif; ?>
-
-            <form method="POST" class="mt-4">
-              <div class="mb-3">
-                <label class="form-label" for="email">E-mail</label>
-                <input type="email" id="email" name="email" class="form-control" placeholder="seuemail@exemplo.com" required>
-              </div>
-              <div class="mb-4">
-                <label class="form-label" for="senha">Senha</label>
-                <input type="password" id="senha" name="senha" class="form-control" placeholder="Digite sua senha" required>
-              </div>
-              <button type="submit" class="btn btn-success w-100">Entrar</button>
-            </form>
-
-            <p class="text-center mt-4 mb-0">
-              Ainda não tem conta?
-              <a class="fw-semibold" href="cadastro_cliente.php">Crie sua conta agora</a>
-            </p>
-          </div>
-        </div>
+  <div class="auth-card">
+    <div class="brand-area">
+      <div class="brand-icon">
+        <i class="bi bi-scissors"></i>
       </div>
+      <span>Barbearia La Mafia</span>
+      <h1>Entrar</h1>
+      <p>Acesse sua conta para gerenciar seus agendamentos</p>
     </div>
+
+    <?php if (!empty($erro)): ?>
+      <div class="alert alert-danger alert-feedback" role="alert">
+        <?= htmlspecialchars($erro, ENT_QUOTES, 'UTF-8'); ?>
+      </div>
+    <?php endif; ?>
+
+    <form method="POST" class="mt-4 position-relative">
+      <div class="mb-3">
+        <label class="form-label" for="email">E-mail</label>
+        <input type="email" id="email" name="email" class="form-control" placeholder="seuemail@exemplo.com" required>
+      </div>
+      <div class="mb-4">
+        <label class="form-label" for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" class="form-control" placeholder="Digite sua senha" required>
+      </div>
+      <button type="submit" class="btn btn-register w-100">Entrar</button>
+    </form>
+
+    <p class="text-center mt-4 mb-0 helper-text">
+      Ainda não tem conta?
+      <a class="fw-semibold" href="cadastro_cliente.php">Cadastre-se para começar</a>
+    </p>
   </div>
 </main>
 
